@@ -1,0 +1,43 @@
+# secrets / credentials
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+*.env
+.env*
+*token*
+*secret*
+*cookie*
+*password*
+*credential*
+id_rsa*
+id_ed25519*
+
+# runtime cache / logs / activity
+runtime/cache/
+activity/
+logs/
+*.log
+*.pid
+*.tmp
+*.bak
+*.swp
+
+# databases / dumps / large runtime data
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.sql
+
+# python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# system
+.DS_Store
+Thumbs.db
