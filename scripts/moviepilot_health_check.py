@@ -12,7 +12,7 @@ from datetime import datetime
 
 sys.dont_write_bytecode = True
 API = 'http://127.0.0.1:3001/api/v1'
-TOKEN = os.environ.get('MOVIEPILOT_API_TOKEN') or 'ixOAH5i85GaHQiFajFyBzw'
+TOKEN = os.environ.get('MOVIEPILOT_API_TOKEN', '')
 
 
 def get(path: str):

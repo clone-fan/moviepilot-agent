@@ -145,7 +145,12 @@ def main() -> int:
     write_repo_basics()
     for src_rel, dst in SYNC_ITEMS:
         copy_tree(SRC / src_rel, dst)
-    # 仓库副本禁止携带运行环境固定凭据；同步阶段已排除敏感命名文件。
+    # 仓库副本禁止携带运行环境固定凭据；移除健康检查脚本中的本机默认 API Token。
+    health = REPO / 'scripts/moviepilot_health_check.py'
+    if health.exists():
+        text = health.read_text(encoding='utf-8', errors='ignore')
+        text = re.sub(r"TOKEN = os\.environ\.get\('MOVIEPILOT_API_TOKEN'\) or '[^']+'", "TOKEN = os.environ.get('MOVIEPILOT_API_TOKEN', '')", text)
+        health.write_text(text, encoding='utf-8')
     secret_scan()
     status = run(['git', 'status', '--porcelain'], cwd=REPO)
     if not status.strip():
