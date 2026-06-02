@@ -1,6 +1,6 @@
 ---
 name: Agent 技能路由
-version: 7.0.0
+version: 7.1.0
 last_updated: 2026-06-02
 ---
 
@@ -20,6 +20,9 @@ last_updated: 2026-06-02
 8. 版本、升级、重启 → `moviepilot-update`
 9. 数据库原始查询/维护 → `database-operation`
 10. 创建/修改 Agent skill → `create-moviepilot-skill` / `writing-skills`
+
+## moviepilot skill overlap arbitration
+技能重叠时按 direct routes → resource-search → moviepilot-cli → moviepilot-api → command-dispatch → 专项技能的顺序仲裁；安全确认与用户明确指令优先。
 
 ## 流程技能
 - bug/异常/失败：`systematic-debugging`
