@@ -1,8 +1,8 @@
 ---
 name: moviepilot-agent-git-maintenance
-version: 1
+version: 2
 description: >-
-  Use this skill when maintaining the moviepilot-agent Git repository, syncing Agent capability assets, removing tracked directories from the repository, fixing failed Git pushes, restoring SSH alias or Deploy Key access, or performing handoff-safe Git cleanup and final verification.
+  Use this skill when maintaining the moviepilot-agent Git repository, syncing Agent capability assets, removing tracked directories from the repository, fixing failed Git pushes, initializing GitHub SSH/Deploy Key access from zero, restoring SSH alias or Deploy Key access, or performing handoff-safe Git cleanup and final verification.
 allowed-tools: read_file list_directory execute_command edit_file write_file
 ---
 
@@ -55,6 +55,116 @@ Use this skill for requests like:
 - “做一次可交接的 Git 收尾校验”
 
 Do not use it for ordinary media search, downloads, subscriptions, or MoviePilot site tasks.
+
+
+## First-Time GitHub Access Setup
+
+Use this section when the repository has not been connected yet, or when the user asks to接入 GitHub / 新建仓库 / 配置 Deploy Key.
+
+### 0. Required Inputs
+
+Confirm these before creating credentials or changing remotes:
+
+- GitHub repository owner/name, for example `clone-fan/moviepilot-agent`.
+- Whether the key should be read-only or allow write access. For maintenance push, Deploy Key must allow write access.
+- Local repository path, normally `/config/agent/repo/moviepilot-agent`.
+- Dedicated alias, normally `github.com-moviepilot-agent`.
+
+Never ask the user to paste private keys. Never save tokens or passwords in memory or repository files.
+
+### 1. Create Dedicated Runtime SSH Assets
+
+Store Git SSH material under runtime, not memory and not the Git repository.
+
+```bash
+mkdir -p /config/agent/runtime/git
+chmod 700 /config/agent/runtime/git
+ssh-keygen -t ed25519 -C moviepilot-agent-runtime -f /config/agent/runtime/git/moviepilot-agent_ed25519 -N ''
+chmod 600 /config/agent/runtime/git/moviepilot-agent_ed25519
+chmod 644 /config/agent/runtime/git/moviepilot-agent_ed25519.pub
+ssh-keygen -lf /config/agent/runtime/git/moviepilot-agent_ed25519.pub
+cat /config/agent/runtime/git/moviepilot-agent_ed25519.pub
+```
+
+Only show the public key to the user. Ask the user to add it to GitHub repository settings as a Deploy Key. For push maintenance, GitHub must enable write access for that Deploy Key.
+
+### 2. Write Dedicated SSH Config
+
+```bash
+cat > /config/agent/runtime/git/ssh_config <<'EOF'
+Host github.com-moviepilot-agent
+  HostName github.com
+  User git
+  IdentityFile /config/agent/runtime/git/moviepilot-agent_ed25519
+  IdentitiesOnly yes
+EOF
+chmod 600 /config/agent/runtime/git/ssh_config
+```
+
+Do not put this private key or config inside the repository.
+
+### 3. Verify GitHub Authentication
+
+```bash
+GIT_SSH_COMMAND='ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -o StrictHostKeyChecking=accept-new' \
+  ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -T git@github.com-moviepilot-agent
+```
+
+Expected success:
+
+```text
+Hi OWNER/REPO! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+If GitHub says permission denied, the public key has not been added, was added to the wrong repository, or lacks write access for push.
+
+### 4. Clone Or Attach The Repository
+
+For a fresh clone:
+
+```bash
+mkdir -p /config/agent/repo
+GIT_SSH_COMMAND='ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -o StrictHostKeyChecking=accept-new' \
+  git clone git@github.com-moviepilot-agent:clone-fan/moviepilot-agent.git /config/agent/repo/moviepilot-agent
+```
+
+For an existing local repository:
+
+```bash
+cd /config/agent/repo/moviepilot-agent
+git remote set-url origin git@github.com-moviepilot-agent:clone-fan/moviepilot-agent.git
+git remote -v
+GIT_SSH_COMMAND='ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -o StrictHostKeyChecking=accept-new' git fetch origin main
+```
+
+### 5. Configure Repository Identity When Required
+
+If commits show `root <root@moviepilot-v2>` and the user wants a stable author, set repository-local identity only:
+
+```bash
+cd /config/agent/repo/moviepilot-agent
+git config user.name 'MoviePilot Agent'
+git config user.email 'moviepilot-agent@users.noreply.github.com'
+git config --local --list | rg '^(user.name|user.email)'
+```
+
+Do not store personal email unless the user explicitly provides it and wants it used.
+
+### 6. First Sync And Push
+
+After initial access works, run the normal maintenance workflow:
+
+```bash
+cd /config/agent/repo/moviepilot-agent
+PYTHONDONTWRITEBYTECODE=1 /opt/venv/bin/python scripts/agent_self_audit.py
+git status --short --branch
+git add README.md .gitignore skills runtime memory jobs scripts
+git diff --cached --stat
+git commit -m "chore: initialize moviepilot agent capability assets"
+GIT_SSH_COMMAND='ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -o StrictHostKeyChecking=accept-new' git push origin main
+```
+
+If the repository already has commits, fetch and rebase before the first push.
 
 ## Workflow
 
