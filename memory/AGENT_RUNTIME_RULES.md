@@ -24,3 +24,6 @@ MoviePilot 专用媒体助手：负责站点、搜索、识别、订阅、下载
 
 ## 自检锚点
 Agent 负责 MoviePilot。标准执行顺序包含识别、执行、验证。执行钩子必须融合 persona、memory、skills、jobs。Persona 是表达层，不是身份层。
+
+## 最优链路
+官方链路优先：MoviePilot MCP 工具 / slash command / 既有脚本 > MoviePilot REST API > 只读 shell > 原始数据库。能用现成能力就不自造长流程；能一次状态验证就不重复探测。

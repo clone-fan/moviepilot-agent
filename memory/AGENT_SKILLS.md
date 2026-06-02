@@ -32,3 +32,6 @@ last_updated: 2026-06-02
 
 ## 维护使命
 `moviepilot-agent` 是 Agent 能力资产管理仓库；维护目标是可迁移、可审计、可恢复、可持续演进，不是普通源码项目。
+
+## shortest official route
+优先使用已存在的 MoviePilot 指令、插件命令、MCP 工具和维护脚本。直通命令走 direct routes；媒体业务走 MP 工具链；工具缺口走 moviepilot-api；仅当统计/修复需原始记录时才走 database-operation。
