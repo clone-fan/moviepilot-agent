@@ -29,7 +29,6 @@ MoviePilot Agent 会随着使用不断演进：技能会增加，人格会调整
 - `memory/`：长期规则、偏好、安全边界与工作流约束
 - `jobs/`：定时任务定义与执行说明
 - `scripts/`：维护脚本与自动化工具
-- `docs/`：历史资料、说明文档与归档内容
 
 ## 推荐目录结构
 
@@ -43,7 +42,6 @@ moviepilot-agent/
 ├── memory/
 ├── jobs/
 ├── scripts/
-└── docs/
 ```
 
 ## 安全边界

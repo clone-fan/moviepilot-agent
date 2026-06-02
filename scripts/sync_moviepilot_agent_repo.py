@@ -18,7 +18,6 @@ SYNC_ITEMS = [
     ('memory', REPO / 'memory'),
     ('jobs', REPO / 'jobs'),
     ('scripts', REPO / 'scripts'),
-    ('docs', REPO / 'docs'),
 ]
 
 EXCLUDE_NAME_RE = re.compile(r'(token|secret|cookie|password|credential)', re.I)
@@ -156,7 +155,7 @@ def main() -> int:
     if not status.strip():
         print('OK no_changes')
         return 0
-    run(['git', 'add', 'README.md', '.gitignore', 'skills', 'runtime', 'memory', 'jobs', 'scripts', 'docs'], cwd=REPO)
+    run(['git', 'add', 'README.md', '.gitignore', 'skills', 'runtime', 'memory', 'jobs', 'scripts'], cwd=REPO)
     staged = run(['git', 'diff', '--cached', '--name-only'], cwd=REPO)
     if not staged.strip():
         print('OK no_staged_changes')

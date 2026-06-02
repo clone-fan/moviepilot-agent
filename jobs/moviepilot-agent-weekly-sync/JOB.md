@@ -15,7 +15,6 @@ last_run: ""
 - `memory/`
 - `jobs/`
 - `scripts/`
-- `docs/`
 
 ## 执行命令
 
