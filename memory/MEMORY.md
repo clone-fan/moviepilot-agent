@@ -1,66 +1,22 @@
 ---
 name: Agent Memory Hub
-description: Agent 记忆目录的入口说明与读取顺序
-version: 6.0.0
-last_updated: 2026-05-01
+description: 长期记忆入口索引与职责边界
+version: 7.0.0
+last_updated: 2026-06-02
 ---
 
 # Agent Memory Hub
 
-## 目录结构
-```text
-/config/agent/
-├── CURRENT_PERSONA.md
-├── docs/
-├── jobs/
-├── scripts/
-├── memory/
-│   ├── MEMORY.md
-│   ├── USER_PREFERENCES.md
-│   ├── AGENT_RUNTIME_RULES.md
-│   ├── AGENT_SKILLS.md
-│   ├── DIRECTORY_GOVERNANCE.md
-│   ├── SUPERPOWERS_WORKFLOW.md
-│   ├── PERSONA_FUSION.md
-│   ├── MOVIEPILOT_AGENT_WORKFLOW.md
-│   ├── SAFETY_BOUNDARIES.md
-│   ├── MOVIEPILOT_TROUBLESHOOTING.md
-│   ├── OBSERVABILITY.md
-│   ├── JOB_GOVERNANCE.md
-│   ├── NOTIFICATION_WORKFLOW.md
-│   ├── SKILL_GOVERNANCE.md
-│   ├── ACCEPTANCE_CRITERIA.md
-│   └── WAKE_FORMAT.md
-├── runtime/
-└── skills/
-```
+## 定位
+`/config/agent/memory` 只保存长期、稳定、跨任务复用的运行规则。单次过程进 activity，定时任务进 jobs，脚本进 scripts，运行态进 runtime，历史资料进 docs。
 
 ## 读取顺序
-1. 读取 `/config/agent/CURRENT_PERSONA.md`
-2. 读取 `/config/agent/memory/MEMORY.md`
-3. 读取 `/config/agent/memory/` 下的规则文件：
-   - `USER_PREFERENCES.md`
-   - `AGENT_RUNTIME_RULES.md`
-   - `AGENT_SKILLS.md`
-   - `WAKE_FORMAT.md`
-   - `DIRECTORY_GOVERNANCE.md`
-   - `SUPERPOWERS_WORKFLOW.md`
-   - `PERSONA_FUSION.md`
-   - `MOVIEPILOT_AGENT_WORKFLOW.md`
-   - `SAFETY_BOUNDARIES.md`
-   - `MOVIEPILOT_TROUBLESHOOTING.md`
-   - `OBSERVABILITY.md`
-   - `JOB_GOVERNANCE.md`
-   - `NOTIFICATION_WORKFLOW.md`
-   - `SKILL_GOVERNANCE.md`
-   - `ACCEPTANCE_CRITERIA.md`
-4. `/config/agent/docs/` 仅作为过往文件、回溯资料和旧版记忆查询区；只有需要追溯历史资料时才读取，不作为现行系统运行数据来源
+1. `/config/agent/CURRENT_PERSONA.md`
+2. 本文件
+3. 核心规则：`USER_PREFERENCES.md`、`AGENT_RUNTIME_RULES.md`、`AGENT_SKILLS.md`、`MOVIEPILOT_AGENT_WORKFLOW.md`、`SAFETY_BOUNDARIES.md`、`PERSONA_FUSION.md`
+4. 治理与验收：`DIRECTORY_GOVERNANCE.md`、`JOB_GOVERNANCE.md`、`OBSERVABILITY.md`、`ACCEPTANCE_CRITERIA.md`、`WAKE_FORMAT.md`
+5. 专项约束：`HEARTBEAT_REPORT_RULES.md`、`MOVIEPILOT_TROUBLESHOOTING.md`、`NOTIFICATION_WORKFLOW.md`、`SKILL_GOVERNANCE.md`、`SUPERPOWERS_WORKFLOW.md`
 
-## 使用约束
-1. 长期规则统一保存在 `/config/agent/memory/`，但必须按职责拆分。
-2. `USER_PREFERENCES.md` 只记录用户长期、稳定、跨任务通用的个人偏好。
-3. `CURRENT_PERSONA.md` 用于标识当前人格入口
-4. `docs/` 用于补充说明与参考资料
-5. 涉及能力、规则、方法与配置检查时，遵循 superpowers 工作方式
-6. 现行系统运行态文件应放在 `runtime/`、`jobs/`、`memory/`、`skills/` 等对应职责目录，不放在 docs
-7. `jobs/` 只放 Job 定义与执行日志；可执行脚本统一放在 `/config/agent/scripts/`
+## 不可压缩边界
+- MoviePilot Agent 身份、媒体主链路、安全确认、技能优先、完成验证、人格融合、目录职责、Job 生命周期、心跳固定模板不可被普通偏好覆盖。
+- 不保存凭据、Token、Cookie、密码、私钥。
