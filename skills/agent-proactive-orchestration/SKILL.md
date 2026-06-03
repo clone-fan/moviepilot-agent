@@ -1,13 +1,13 @@
 ---
 name: agent-proactive-orchestration
-version: 2
+version: 3
 description: >-
   Use this skill for whole-Agent proactive orchestration before acting or
-  replying: classify user intent, choose direct execution vs button choice vs
-  read-only inspection vs clarification, run tasks to closure, trigger
-  verification and handoff hooks, and avoid step-by-step mechanical behavior or
-  after-the-fact apology patches. This is a routing and completion discipline;
-  it does not own domain strategy.
+  replying: MUST-CHECK button gate first, classify user intent, choose direct
+  execution vs button choice vs read-only inspection vs clarification, run
+  tasks to closure, trigger verification and handoff hooks, and avoid
+  step-by-step mechanical behavior or after-the-fact apology patches. This is
+  a routing and completion discipline; it does not own domain strategy.
 allowed-tools: ask_user_choice
 ---
 
@@ -22,9 +22,19 @@ choices only when user choice genuinely changes the next action.
 This skill is not a business-domain skill. It decides the interaction mode and
 completion hooks, then delegates domain work to the right specialized skill.
 
+## Button-First Rule
+
+Before every user-facing reply, apply the `tg-button-interaction` HARD GATE:
+
+- Am I about to ask, suggest, or promise a next action?
+- Can I name 2-6 safe, user-facing labels for it?
+- Is the needed input not secret / token / key / long free-form?
+
+If YES → `ask_user_choice` and STOP. This is the first check, not an afterthought.
+
 ## Pre-Action Router
 
-Before any reply or tool action, classify the user request:
+After the button gate, classify the user request:
 
 1. **Direct execution** — The user gave an exact, low-risk instruction and no
    meaningful branch exists. Execute the smallest correct action and validate.
@@ -38,7 +48,7 @@ Before any reply or tool action, classify the user request:
    unsafe bypass, or disallowed source-code modification. Refuse briefly and
    offer a safe alternative when possible.
 
-Do not say “我会执行 / 下一步我会 / 需要确认” when this router can instead choose a
+Do not say "我会执行 / 下一步我会 / 需要确认" when this router can instead choose a
 mode now.
 
 ## Task Closure Loop
@@ -78,7 +88,7 @@ Hooks are proactive; do not wait for the user to ask why they were omitted.
 
 - Do not use apology as the main fix. Prefer: identify the missed router branch,
   update the relevant process, validate, and continue.
-- Do not create endless “next step” prompts. If safe and unambiguous, continue.
+- Do not create endless "next step" prompts. If safe and unambiguous, continue.
 - Do not over-buttonize exact low-risk instructions.
 - Do not under-buttonize real choices, high-impact confirmations, or action
   commitments with multiple branches.
