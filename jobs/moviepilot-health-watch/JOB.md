@@ -3,7 +3,7 @@ name: MoviePilot 健康巡检
 description: 每天最多一次轻量健康巡检；唯一执行命令：PYTHONDONTWRITEBYTECODE=1 /opt/venv/bin/python /config/agent/scripts/moviepilot_health_check.py；成功输出 SUMMARY ... fail=0；recurring 执行后保持 pending。
 schedule: recurring
 status: pending
-last_run: "2026-06-01 13:54"
+last_run: "2026-06-02 20:02"
 ---
 # MoviePilot 健康巡检
 
@@ -44,6 +44,9 @@ PYTHONDONTWRITEBYTECODE=1 /opt/venv/bin/python /config/agent/scripts/moviepilot_
 5. 不在 Job 目录存放脚本、缓存、日志文件或临时文件。
 
 ## 执行日志
+
+- **2026-06-02 20:02** - 执行命令：/opt/venv/bin/python /config/agent/scripts/moviepilot_health_check.py；结果：成功；输出：SUMMARY total=5 pass=5 fail=0
+
 - **2026-06-01 13:54** - 联动复核 Agent Job 执行链路：脚本 `/config/agent/scripts/moviepilot_health_check.py` 通过编译并实际执行成功；SUMMARY total=5 pass=5 fail=0；状态保持 pending。
 - **2026-06-01 01:30** - 心跳触发执行健康巡检成功；subscribe=5，sites=6/6 active，downloaders=2/2 enabled，scheduler_jobs=20；SUMMARY total=5 pass=5 fail=0；状态保持 pending。
 - **2026-05-29 21:17** - 心跳触发执行健康巡检成功；subscribe=13，sites=6/6 active，downloaders=2/2 enabled，scheduler_jobs=20；SUMMARY total=5 pass=5 fail=0；状态保持 pending。

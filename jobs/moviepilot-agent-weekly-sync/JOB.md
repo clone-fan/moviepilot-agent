@@ -27,6 +27,8 @@ last_run: ""
 
 ## 安全边界
 
+- `docs/` 为本地归档目录，不同步到 Git。
+
 - 不提交私钥、Token、Cookie、密码、数据库、日志、缓存、活动记录。
 - 使用 `/config/agent/runtime/git/ssh_config` 指定专用 Deploy Key 推送。
 - 推送前执行高置信敏感信息扫描。

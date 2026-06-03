@@ -1,6 +1,6 @@
 ---
 name: create-moviepilot-skill
-version: 1
+version: 3
 description: >-
   Use this skill when the user asks to create, scaffold, update, or review a
   MoviePilot agent skill. This includes adding a new built-in skill under the
@@ -141,6 +141,15 @@ For an existing built-in skill:
 - Report the final path and note whether the agent needs a restart to sync the
   latest built-in skill into `config/agent/skills`.
 
+### Step 9: Hand Off Repository Sync
+
+When a skill change under `/config/agent` is created, updated, distilled,
+finalized, version-bumped, or validated, do not handle Git sync here.
+
+Hand off repository sync reminders, self-checks, sensitive scans, commit, and
+push to the dedicated `moviepilot-agent-git-maintenance` skill. This skill only
+creates or updates skills.
+
 ## Minimal Example
 
 User request:
@@ -152,7 +161,7 @@ Expected outcome:
 - Create or update a directory such as `skills/update-site-cookie/`
 - Write `SKILL.md` with a trigger-rich `description`
 - Include only the tools needed for that workflow
-- Increment `version` when revising an existing built-in skill
+- Increment `version` when revising an existing skill
 
 ## Final Checklist
 

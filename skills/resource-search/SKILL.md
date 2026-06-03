@@ -5,8 +5,8 @@ description: >-
   Use this skill when the user asks to search MoviePilot tracker/torrent
   resources for a movie, TV show, anime, or ambiguous title. Resolve the media
   through the shortest MoviePilot-native path, present a compact poster-card
-  source choice, then route 115 search or MoviePilot subscription directly via
-  internal chains. Trigger phrases include 搜资源, 搜索资源, 找资源, 查种子,
+  source choice, then route 115 search or MoviePilot subscription through
+  MoviePilot user-facing command/tool flows. Trigger phrases include 搜资源, 搜索资源, 找资源, 查种子,
   找种子, 搜片源, 下载哪个, 资源筛选, 4K资源, 1080p资源, BluRay资源, 搜片.
 allowed-tools: search_media recognize_media query_library_exists query_subscribes add_subscribe search_subscribe send_message ask_user_choice run_slash_command
 ---

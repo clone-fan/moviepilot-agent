@@ -1,74 +1,70 @@
 ---
 name: command-dispatch
-version: 1
+version: 2
 description: >-
-  Use this skill when the user's intent is to execute a system or plugin function. Applicable scenarios include:
-  1) The user sends a slash command starting with / (e.g. /cookiecloud, /sites, /subscribes, etc.);
-  2) The user describes an action in natural language that can be fulfilled by a system or plugin command
-  (e.g. "sync sites", "show subscriptions", "refresh subscriptions", "check downloads", etc.).
-  This skill helps you identify the user's intent, find the matching command, extract necessary parameters,
-  and execute the corresponding command.
+  Use this skill as the fallback dispatcher for unknown or plugin-provided slash
+  commands after moviepilot-direct-routes cannot map the request. It can list
+  available slash commands, inspect plugin command capabilities, and execute a
+  selected command. Do not use it before moviepilot-direct-routes for exact
+  MoviePilot commands, direct 115/magnet/ed2k links, or obvious built-in command
+  aliases.
 allowed-tools: list_slash_commands query_plugin_capabilities run_slash_command
 ---
 
 # Command Dispatch
 
-Use this skill to identify user intent and dispatch the corresponding system or plugin command.
+Use this skill to discover and dispatch system or plugin slash commands when the
+more specific direct-route skill does not already cover the user's request.
 
-## When to Use
+## Routing Boundary
 
-- The user sends a `/xxx` slash command (execute directly)
-- The user describes an action in natural language, for example:
-  - "Sync sites" → `/cookiecloud`
-  - "Show my subscriptions" → `/subscribes`
-  - "Refresh subscriptions" → `/subscribe_refresh`
-  - "What's downloading?" → `/downloading`
-  - "Organize downloaded files" → `/transfer`
-  - "Clear cache" → `/clear_cache`
-  - "Restart the system" → `/restart`
-  - "Pause all QB tasks" → `/pause_torrents` (plugin command)
+Prefer `moviepilot-direct-routes` first for:
+
+- exact slash commands
+- built-in MoviePilot command aliases
+- 115 share links
+- magnet / ed2k links
+- simple direct command-style requests
+
+Use this skill when:
+
+- the command is unknown and needs discovery through `list_slash_commands`;
+- the request appears to belong to an installed plugin;
+- plugin capabilities must be queried before execution;
+- direct-routes has no stable mapping.
 
 ## Tools
 
-- `list_slash_commands` — List all available slash commands (system + plugin), returns command name, description, and category
-- `query_plugin_capabilities` — Query detailed plugin capabilities (commands, actions, scheduled services)
-- `run_slash_command` — Execute a specified command (works for both system and plugin commands)
+- `list_slash_commands` — List all available slash commands.
+- `query_plugin_capabilities` — Query plugin commands, actions, and scheduled services.
+- `run_slash_command` — Execute a specified command asynchronously.
 
 ## Workflow
 
 ### Step 1: Identify User Intent
 
-Determine whether the user's message is requesting the execution of a command:
+Determine whether the user is requesting command execution.
 
-- **Direct command**: Message starts with `/`, e.g. `/sites`, `/subscribes` → skip to Step 3
-- **Natural language**: The user describes an actionable request → continue to Step 2
+- Direct command: message starts with `/`, e.g. `/sites`, `/subscribes`.
+- Natural language: describes an actionable command-like request.
 
 ### Step 2: Find Matching Command
 
-Use `list_slash_commands` to retrieve all available commands. Match the user's described intent against the `description` and `category` fields of each command.
+Use `list_slash_commands` to retrieve available commands. If a specific plugin
+is involved, use `query_plugin_capabilities`.
 
-If the user's description involves a specific plugin's functionality, additionally use `query_plugin_capabilities` to query that plugin's detailed capabilities.
+Matching strategy:
 
-**Matching strategy**:
-- Prefer exact matches on command description
-- Then narrow down by category and match
-- If no matching command is found, inform the user that no corresponding function is available
+- Prefer exact command or description matches.
+- Then narrow down by category.
+- Never guess non-existent commands.
 
-### Step 3: Extract Parameters and Execute
+### Step 3: Confirm Risky Commands
 
-Some commands support additional arguments (space-separated after the command), for example:
-- `/redo <history_id>` — Manually re-organize a specific record
-- `/subscribe_delete <name>` — Delete a specific subscription
+High-impact commands such as restart, deletion, credential changes, workflow or
+scheduler execution require explicit user confirmation before `run_slash_command`.
 
-Use `run_slash_command` to execute the command in the format `/command_name arg1 arg2`.
+### Step 4: Execute And Report
 
-### Step 4: Report Result
-
-Command execution is asynchronous. After triggering, inform the user that the command has started. If the command does not exist, list available commands for reference.
-
-## Important Notes
-
-- Command execution requires admin privileges; the tool will automatically check permissions
-- Both system and plugin commands are executed via the `run_slash_command` tool — no need to distinguish between them
-- If you are unsure which command matches the user's intent, use `list_slash_commands` first to look up before deciding
-- Never guess non-existent commands; always select from the available command list
+Use `run_slash_command` with `/command_name arg1 arg2`. Command execution is
+asynchronous; report only that the command has started.

@@ -1,7 +1,15 @@
 ---
 name: moviepilot-cli
-version: 1
-description: Use this skill for any request involving movies, TV shows, or anime, including searching, downloads, subscriptions, library management. Also use this skill whenever the user explicitly mentions MoviePilot.
+version: 2
+description: >-
+  Use this skill as the general MoviePilot media-operations fallback for movies,
+  TV shows, anime, downloads, subscriptions, library management, sites, and
+  files when no narrower MoviePilot skill fits. Do not use it before
+  moviepilot-direct-routes for obvious slash-command/direct-link requests,
+  resource-search for tracker/resource discovery, moviepilot-api for explicit
+  REST API work, moviepilot-update for upgrade/restart/version tasks,
+  transfer-failed-retry for failed organization retries, or identifier skills
+  for recognition-word/custom-identifier work.
 ---
 
 # MoviePilot CLI
@@ -9,6 +17,22 @@ description: Use this skill for any request involving movies, TV shows, or anime
 > All script paths are relative to this skill file.
 
 Use `scripts/mp-cli.js` to interact with the MoviePilot backend.
+
+## Routing Boundary
+
+This is the broad MoviePilot media-operation fallback, not the first skill for
+every mention of MoviePilot.
+
+Prefer narrower skills first:
+
+- `moviepilot-direct-routes`: exact slash commands, direct links, obvious command aliases.
+- `resource-search`: user asks to search/filter resources or pick a source.
+- `moviepilot-api`: user explicitly asks for REST API or CLI/MCP cannot cover an operation.
+- `moviepilot-update`: version, restart, upgrade.
+- `transfer-failed-retry`: retry failed transfer/organization records.
+- `generate-identifiers` / `media-identifier-rulecraft`: custom identifiers or recognition fixes.
+
+Use this skill after that routing check for normal MoviePilot media operations.
 
 ## Discover Commands
 
@@ -75,111 +99,3 @@ If empty, tell the user which filter to relax and ask before retrying.
 #### 4. Present results as a numbered list
 
 Show all results without pre-selection. Each row: index, title, size, seeders, resolution, release group, `volume_factor`, `freedate_diff`.
-
-| `volume_factor` | Meaning |
-|---|---|
-| `免费` | Free download |
-| `50%` | 50% download size |
-| `2X` | Double upload |
-| `2X免费` | Double upload + free |
-| `普通` | No discount |
-
-`freedate_diff`: remaining free window (e.g., `2天3小时`).
-
-#### 5. Check before downloading
-
-After the user picks torrents: Run **Check Library and Subscriptions** step.
-
-If the media already exists in the library or is already subscribed, **stop** and report the finding to the user.
-
-#### 6. Add download
-
-Download one or more torrents (`torrent_url` comes from `get_search_results` output):
-`node scripts/mp-cli.js add_download torrent_url="abc1234:1,def5678:2"`
-
-#### Error handling
-
-| Step | Action |
-|---|---|
-| `search_media` empty | Retry with alternative title (English/original), inform user. Still empty → ask for title or TMDB ID. |
-| `search_torrents` empty | Inform user, ask whether to retry with different sites. |
-| `get_search_results` empty | Do not silently broaden filters. Suggest which filter to relax, ask before retrying. |
-| `add_download` fails | Run `query_downloaders` + `query_download_tasks` to diagnose, then report to user. |
-
-### Add Subscription
-
-1. Search for the media to get `tmdb_id`: Run `search_media`.
-2. Run **Check Library and Subscriptions** step, if media already exists or is subscribed, **stop** and report to user.
-3. If the user specifies a TV season, run Season Validation step first.
-
-Subscribe to a movie or TV show:
-`node scripts/mp-cli.js add_subscribe title="..." year="2011" media_type="tv" tmdb_id=42009`
-
-Subscribe to a specific season:
-`node scripts/mp-cli.js add_subscribe title="..." year="2011" media_type="tv" tmdb_id=42009 season=4`
-
-Subscribe starting from a specific episode:
-`node scripts/mp-cli.js add_subscribe title="..." year="2024" media_type="tv" tmdb_id=12345 season=1 start_episode=13`
-
-### Manage Downloads
-
-List download tasks and get hash for further operations:
-`node scripts/mp-cli.js query_download_tasks status=downloading`
-
-Delete a download task (confirm with user first — irreversible):
-`node scripts/mp-cli.js delete_download hash=<hash>`
-
-Delete a download task and also remove its files (confirm with user first — irreversible):
-`node scripts/mp-cli.js delete_download hash=<hash> delete_files=true`
-
-### Manage Subscriptions
-
-List active subscriptions:
-`node scripts/mp-cli.js query_subscribes status=R`
-
-Update subscription filters:
-`node scripts/mp-cli.js update_subscribe subscribe_id=123 resolution="1080p"`
-
-Only download full-season packs for a TV best-version subscription:
-`node scripts/mp-cli.js update_subscribe subscribe_id=123 best_version=1 best_version_full=1`
-
-Trigger a search for missing episodes (confirm with user first):
-`node scripts/mp-cli.js search_subscribe subscribe_id=123`
-
-Remove a subscription (confirm with user first):
-`node scripts/mp-cli.js delete_subscribe subscribe_id=123`
-
-### Check Library and Subscriptions
-
-Run before any download or subscription to avoid duplicates.
-
-Check if the media already exists in the library:
-`node scripts/mp-cli.js query_library_exists tmdb_id=123456 media_type="movie"`
-
-Check if the media is already subscribed:
-`node scripts/mp-cli.js query_subscribes tmdb_id=123456`
-
-### Season Validation
-
-Mandatory when user specifies a season. Productions sometimes release a show in multiple parts under one TMDB season; online communities and torrent sites may label each part as a separate "season".
-
-#### 1. Verify season exists
-
-Fetch media detail to check available seasons:
-`node scripts/mp-cli.js query_media_detail tmdb_id=<id> media_type="tv"`
-
-Compare `season_info` with the user's requested season:
-1. If the season exists in `season_info` → use that season number directly and return to the calling workflow.
-2. If the season does not exist → the user's "season" likely maps to a later episode range within an existing TMDB season. Note the latest (highest-numbered) season from `season_info`, then continue to next step.
-
-#### 2. Identify the correct episode range
-
-Fetch episode schedule for the latest season from `season_info`:
-`node scripts/mp-cli.js query_episode_schedule tmdb_id=<id> season=<latest_season_number>`
-
-Use `air_date` to find a block of recently-aired episodes that likely corresponds to what the user calls the missing season. Look for a gap in `air_date` between episodes — the gap indicates a part break, and the episodes after the gap are what the user likely refers to as the next "season". For example, if TMDB Season 1 has episodes 1–24 and there is a multi-month gap between episode 12 and 13, then episodes 13–24 correspond to the user's "Season 2". If no such gap exists, tell user content is unavailable. Otherwise confirm the episode range with user.
-
-## Error handling
-
-Missing configuration: Ask the user for the backend host and API key. Once provided, save the config persistently — subsequent commands will use it automatically:
-`node scripts/mp-cli.js -h <HOST> -k <KEY>`

@@ -3,7 +3,7 @@ name: 固定模板心跳播报
 description: 定时采集真实 MoviePilot 内部数据并按固定模板直发 Telegram；唯一执行命令：/opt/venv/bin/python /config/heartbeat_report.py；成功输出 OK；recurring 执行后保持 pending。
 schedule: recurring
 status: pending
-last_run: "2026-06-01 13:54"
+last_run: "2026-06-02 20:02"
 ---
 # 固定模板心跳播报任务
 
@@ -100,6 +100,9 @@ last_run: "2026-06-01 13:54"
 - **2026-05-29 14:31** - 已验证 `/config/heartbeat_report.py` 可通过 `py_compile`，并能按锁定模板渲染真实内部数据。
 
 ## 执行日志
+
+- **2026-06-02 20:02** - 执行命令：/opt/venv/bin/python /config/heartbeat_report.py；结果：成功；输出：OK
+
 - **2026-05-29 16:04** - 按少爷要求执行全量心跳 Job 检查并手动触发一次：已清理脚本未用导入与审计字符串缩进等维护性障碍；通过 `py_compile`、三种下载器呈现模拟、栏目顺序断言、旧字段残留断言；随后实际运行 `/opt/venv/bin/python /config/heartbeat_report.py` 发送成功，脚本输出 `OK`；从本次通知日志提取已发送文本复核，确认下载器为 `⦁ 正在下载：无`，无乱码、无 0 速度、无可转移/做种字段，状态保持 pending。
 - **2026-05-29 15:30** - 心跳触发执行 `/config/heartbeat_report.py` 成功；脚本退出码 0，输出 OK，固定模板播报已通过内部通知发送；状态保持 pending。
 - **2026-05-29 15:10** - 心跳触发执行 `/config/heartbeat_report.py` 成功；脚本退出码 0，输出 OK，固定模板播报已通过内部通知发送；状态保持 pending。
