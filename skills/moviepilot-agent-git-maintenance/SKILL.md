@@ -1,6 +1,6 @@
 ---
 name: moviepilot-agent-git-maintenance
-version: 3
+version: 4
 description: >-
   Use this skill when maintaining the moviepilot-agent Git repository, syncing
   Agent capability assets, prompting for repository sync after /config/agent
@@ -472,3 +472,111 @@ Report compactly:
 
 Never say “完成” from memory. Say it only after fresh verification output supports
 it.
+
+## Version Rollback Support
+
+Use this section when the user asks to roll back, restore an older version,
+recover from a bad maintenance sync, or inspect history for any maintained Git
+repository.
+
+### Rollback Principles
+
+- Keep history, do not erase it by default.
+- Prefer `git revert <commit>` for full-commit rollback because it preserves an
+audit trail and is safe for shared remote branches.
+- Prefer file-level restore plus a new commit when only one file or directory
+should be restored.
+- Avoid `git reset --hard` and force push unless the user explicitly asks to
+rewrite remote history after seeing the risk.
+- Before rollback, always inspect current status, fetch remote, and identify the
+exact bad commit and target good commit.
+- Before pushing rollback, run the same validation and sensitive scan used by the
+normal maintenance workflow.
+
+### Maintained Repository Inventory
+
+Known maintained repositories may include:
+
+```text
+/config/agent/repo/moviepilot-agent
+/config/agent/repo/Mihomo_Yaml
+```
+
+Discover current maintained repositories with:
+
+```bash
+find /config/agent/repo -maxdepth 2 -type d -name .git -print | sed 's#/.git$##' | sort
+```
+
+### Safe Rollback Workflow
+
+1. Inspect history read-only:
+
+```bash
+cd <repo>
+git fetch origin main
+git status --short --branch
+git log --oneline --decorate -20
+```
+
+2. Show the suspected bad change:
+
+```bash
+git show --stat <bad_commit>
+git show --name-only <bad_commit>
+```
+
+3. Choose rollback mode:
+
+- Whole commit rollback:
+
+```bash
+git revert <bad_commit>
+```
+
+- File-level restore from a known good commit:
+
+```bash
+git checkout <good_commit> -- path/to/file
+# or: git restore --source <good_commit> -- path/to/file
+git diff -- path/to/file
+git commit -m "revert: restore <file> from <good_commit>"
+```
+
+- View only, no change:
+
+```bash
+git show <commit>:path/to/file
+```
+
+4. Validate before push:
+
+```bash
+git status --short --branch
+# run repository-specific validation / dry-run / sensitive scan
+```
+
+5. Push only after confirmation or explicit user instruction:
+
+```bash
+git push origin main
+```
+
+6. Final verification:
+
+```bash
+git fetch origin main
+git status --short --branch
+git rev-parse HEAD
+git rev-parse origin/main
+```
+
+### User Handoff
+
+When the user reports a problem after maintenance:
+
+- First ask or infer which repository is affected.
+- Inspect recent commits and present candidate rollback points.
+- Recommend the least destructive rollback path.
+- Use buttons for rollback confirmation when available.
+- Never force push as the default recovery path.

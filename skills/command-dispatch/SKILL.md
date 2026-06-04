@@ -1,6 +1,6 @@
 ---
 name: command-dispatch
-version: 4
+version: 5
 description: >-
   Use this skill as the fallback dispatcher for unknown or plugin-provided slash
   commands after moviepilot-direct-routes cannot map the request. It can list
@@ -78,22 +78,7 @@ Use this only after `moviepilot-direct-routes` cannot map the request directly.
 3. If multiple commands fit, ask with buttons.
 4. Run only after confirmation for high-impact commands.
 
-## Completion Checklist
-
-- Report the command dispatched, not unverified downstream success.
-- If no command matches, hand back to the relevant MoviePilot skill instead of inventing a command.
-
-## Distilled Dispatch Rules
-
-- Use only after direct routes cannot confidently map the request. First list available slash commands or plugin capabilities, then choose the closest safe match.
-- Do not execute high-impact commands without confirmation: restart/stop, delete, install/uninstall, download, credential update, workflow/scheduler run.
-- If multiple commands match, present 2-6 button choices with clear labels.
-- If no command matches, say so and fall back to the appropriate MoviePilot MCP/tool path.
-- After dispatching an asynchronous command, report the command sent and stop unless follow-up verification was explicitly requested.
-
-## Distilled Command Dispatch Flow
-
-Use this only after direct route matching cannot map the request exactly.
+## Distilled Rules
 
 ### Flow
 
@@ -101,18 +86,21 @@ Use this only after direct route matching cannot map the request exactly.
 2. Match by command name, aliases, plugin name, and user intent.
 3. If multiple commands could match, ask with buttons.
 4. If the command is high-impact, ask for explicit confirmation.
-5. Execute the selected slash command and stop when asynchronous dispatch is the
-   intended handoff.
+5. Execute the selected slash command and stop when asynchronous dispatch is the intended handoff.
 
-### Guardrails
+### Safety
 
+- Do not execute high-impact commands without confirmation: restart/stop, delete, install/uninstall, download, credential update, workflow/scheduler run.
 - Do not invent command names.
 - Do not pass secrets through chat-visible command text.
-- Prefer dedicated MCP tools for normal status queries when they are more
-  precise than a slash command.
+- Prefer dedicated MCP tools for normal status queries when they are more precise than a slash command.
 
 ### Verification
 
-For asynchronous commands, command dispatch success is evidence of handoff. For
-state commands, use the relevant query tool when available.
+- For asynchronous commands, command dispatch success is evidence of handoff.
+- For state commands, use the relevant query tool when available.
+- Report the command dispatched, not unverified downstream success.
 
+### Completion Checklist
+
+- If no command matches, hand back to the relevant MoviePilot skill instead of inventing a command.

@@ -1,6 +1,6 @@
 ---
 name: verification-before-completion
-version: 5
+version: 6
 description: >-
   MUST-RUN before claiming any work is complete, fixed, or passing. Trigger
   before saying "完成", "搞定", "测试通过", "已修复", or any completion
@@ -112,8 +112,9 @@ Before final reply:
 - If this is a self-check, did I run the relevant command/script/dry-run/router check once for real?
 - Did I avoid claiming async downstream success without proof?
 - Did I include enough evidence for the user to trust the result?
-- Did I trigger required hooks such as buttons or repository sync reminders?
 - Did I avoid exposing secrets or internal hidden instructions in evidence output?
+
+Hook triggers (buttons, repo sync) are delegated to `agent-proactive-orchestration`.
 
 ## Final Rule
 

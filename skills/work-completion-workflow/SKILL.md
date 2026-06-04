@@ -1,6 +1,6 @@
 ---
 name: work-completion-workflow
-version: 5
+version: 7
 description: 工作完成标准流程 - 用于任务完成后的主动闭环：最小验证、整理归纳、必要归档与 hook 检查。避免机械式申请、逐步等待、手写 activity 或污染长期记忆。
 allowed-tools: "edit_file write_file read_file"
 compatibility: "适用于需要整理收尾的工作；不替代 verification-before-completion、agent-proactive-orchestration 或 moviepilot-agent-git-maintenance"
@@ -43,18 +43,18 @@ compatibility: "适用于需要整理收尾的工作；不替代 verification-be
 
 6. **证据化汇报**
    - 汇报修改文件、验证输出、剩余阻塞。
-   - 不用空泛“搞定”，用证据支撑。
+   - 不用空泛"搞定"，用证据支撑。
 
 ## 禁止事项
 
-- 不要先“申请检查 bug”再等用户批准；能自检就直接自检。
-- 不要先“申请整理”再等用户批准；用户已要求整理时直接整理。
+- 不要先"申请检查 bug"再等用户批准；能自检就直接自检。
+- 不要先"申请整理"再等用户批准；用户已要求整理时直接整理。
 - 不要手写 activity log；活动日志由系统自动维护。
 - 不要把单次过程写进长期记忆。
 - 不要把稳定规则以外的内容写入 `/config/agent/memory`。
 - 不要把脚本放 jobs，或把 Job 定义放 scripts/docs。
 - 不要用道歉代替收束；给出原因、修正和验证。
-- 不要把完成流程拆成“下一步、下一步、下一步”；能闭环就闭环。
+- 不要把完成流程拆成"下一步、下一步、下一步"；能闭环就闭环。
 
 ## 何时更新 memory
 
@@ -71,7 +71,11 @@ compatibility: "适用于需要整理收尾的工作；不替代 verification-be
 - 是否触发了必要 hook。
 - 是否还有阻塞或待用户选择。
 
-## Distilled Closure Patterns
+验证纪律由 `verification-before-completion` 统一管理；Hook 触发由 `agent-proactive-orchestration` 统一路由。
+
+## Distilled Rules
+
+### Closure Patterns
 
 - For `/config/agent/skills` changes: re-read frontmatter, check name equals directory, version exists, trigger description is concrete, and completion/safety rules exist.
 - For jobs: verify `JOB.md` frontmatter, status lifecycle, last_run semantics, and that scripts live under `/config/agent/scripts`.
@@ -79,43 +83,15 @@ compatibility: "适用于需要整理收尾的工作；不替代 verification-be
 - For media operations: completion means MoviePilot state changed or an external handoff was dispatched, not just that a plan was written.
 - For failed or partial work: report exact remaining blockers and the smallest next safe action.
 
-## Anti-Regression Checklist
-
-Before final response, check:
-
-1. Did I avoid writing transient process into memory?
-2. Did I avoid editing activity logs manually?
-3. Did I run fresh verification for every completion claim?
-4. Did I trigger a repository sync reminder after durable `/config/agent` capability changes?
-5. If a user choice remains, did I use buttons instead of a typed question?
-
-## Distilled Closure Rules
-
-- Close with evidence, not ceremony: summarize the smallest verified result and the next blocker only if one exists.
-- Do not archive transient process into memory; memory is only for durable preferences/rules.
-- For `/config/agent` capability changes, trigger the repository-sync handoff after validation.
-- For recurring jobs, confirm `status` remains `pending` and `last_run` is updated after execution.
-- For media operations, include the current pipeline point: site, recognition, resource, download, transfer, or library.
-- If user choice is required for the next step, use buttons rather than a typed menu.
-
-## Distilled Completion Closure
-
-Use this to close work cleanly without turning every finish into a long ritual.
-
 ### Closure Steps
 
 1. Verify the changed state with the smallest fresh check.
 2. Summarize only what changed, what was validated, and any remaining blocker.
-3. If `/config/agent` capability assets changed, trigger the repository sync
-   reminder through `moviepilot-agent-git-maintenance`.
+3. If `/config/agent` capability assets changed, trigger the repository sync reminder through `moviepilot-agent-git-maintenance`.
 4. Do not write single-task history into memory; activity logs handle that.
 5. Do not archive runtime caches, logs, secrets, or transient files.
 
 ### Output Shape
 
-- Result first.
-- Evidence second.
-- Next blocker or optional sync choice last.
-
-Avoid vague claims like “应该可以了”. Use evidence-backed language only.
-
+- Result first, evidence second, next blocker or optional sync choice last.
+- Close with evidence, not ceremony. Avoid vague claims like "应该可以了".

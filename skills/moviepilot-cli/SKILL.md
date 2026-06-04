@@ -1,6 +1,6 @@
 ---
 name: moviepilot-cli
-version: 5
+version: 7
 description: >-
   Use this skill as the general MoviePilot media-operations fallback for movies,
   TV shows, anime, downloads, subscriptions, library management, sites, and
@@ -100,60 +100,24 @@ If empty, tell the user which filter to relax and ask before retrying.
 
 Show all results without pre-selection. Each row: index, title, size, seeders, resolution, release group, `volume_factor`, `freedate_diff`.
 
-## Distilled Operating Rules
+## Distilled Rules
 
-- Treat this skill as the broad fallback only after direct routes, resource search, update, transfer retry, and identifier skills are ruled out.
-- Prefer MCP tools over shell scripts when the same operation is available in the current runtime. Use CLI only when it gives a clearer or missing path.
-- For media acquisition, follow: identity -> library/subscription check -> site/resource scope -> candidate results -> explicit download/subscribe confirmation -> status validation.
-- For TV shows, never assume full-series subscription. Confirm or specify each season; omitting season means season 1 only.
-- Downloads, deletes, scheduler/workflow runs, site credential changes, plugin installs, restarts, and file-destructive operations need explicit confirmation.
-
-## Completion Checklist
-
-Before reporting success, verify the state with the matching MoviePilot authority:
-
-- Subscription changed -> query the subscription.
-- Download added/modified -> query downloader task status.
-- Transfer requested -> query transfer history or library existence.
-- Site operation -> query/test site status.
-- Search-only work -> report exact media identity and whether library/subscription already exists.
-- If blocked, name the blocker and the next safe action instead of claiming completion.
-
-## Distilled Completion Rules
+### Routing
 
 - Start from the narrowest official route; use this fallback only after direct routes, resource search, update, transfer retry, and identifier skills are ruled out.
-- Before any state change, inspect only the context that affects the action: site scope, media identity, library existence, subscription/download/transfer status.
-- Never use CLI/API as a shortcut around safety: downloads, deletions, credential changes, workflow/scheduler runs, restarts, and plugin installs still require explicit confirmation.
-- After executing a command, verify with the matching authoritative state query instead of trusting command output alone.
-- If a command fails, try one narrower fallback: check command parameters with `show`, then check site/downloader/library state as appropriate.
-- Final reply must include the action taken, verification evidence, and the remaining blocker if any.
-
-## Distilled MoviePilot Execution Pattern
-
-Use the shortest official route first: MCP tools or direct slash commands before
-REST API, shell, or database access. Do not turn normal media operations into a
-custom implementation task.
-
-### Preflight
-
-- Identify the current operational step: site, recognition, resource search,
-download, subscription, transfer, library, or status.
-- Inspect only the state that can change the next action.
-- If the user asked for a high-impact operation, preserve the confirmation rule:
-  downloads, deletes, restarts, credential changes, plugin install/uninstall,
-  workflow/scheduler execution, and destructive history cleanup need explicit
-  confirmation.
+- Prefer MCP tools over shell scripts when the same operation is available in the current runtime. Use CLI only when it gives a clearer or missing path.
 
 ### Execution
 
-- For media identity use `search_media` or `recognize_media`; do not confuse
-  these with torrent search.
-- For acquisition use `search_torrents`, subscription tools, or direct link
-  routes according to user intent.
-- For missing-library or landed-file questions, include download, transfer, and
-  library state instead of stopping at one layer.
-- For no-result cases, check site scope/health, recognition quality, and filters
-  before concluding the resource is unavailable.
+- For media identity use `search_media` or `recognize_media`; do not confuse these with torrent search.
+- For acquisition use `search_torrents`, subscription tools, or direct link routes according to user intent.
+- For missing-library or landed-file questions, include download, transfer, and library state instead of stopping at one layer.
+- For no-result cases, check site scope/health, recognition quality, and filters before concluding the resource is unavailable.
+
+### Safety
+
+- Downloads, deletes, scheduler/workflow runs, site credential changes, plugin installs, restarts, and file-destructive operations need explicit confirmation.
+- For TV shows, never assume full-series subscription. Confirm or specify each season; omitting season means season 1 only.
 
 ### Verification
 
@@ -161,9 +125,10 @@ download, subscription, transfer, library, or status.
 - After download actions, query download tasks or histories.
 - After transfer actions, query transfer history or library existence.
 - After config-like changes, re-read the affected state.
+- If a command fails, try one narrower fallback: check command parameters with `show`, then check site/downloader/library state as appropriate.
 
 ### Handoff
 
-If a `/config/agent` capability asset changed during the task, hand off sync
-reminders to `moviepilot-agent-git-maintenance`; do not silently skip the hook.
+If a `/config/agent` capability asset changed during the task, hand off sync reminders to `moviepilot-agent-git-maintenance`; do not silently skip the hook.
 
+Completion verification is delegated to `verification-before-completion`.

@@ -1,6 +1,6 @@
 ---
 name: tg-button-interaction
-version: 14
+version: 15
 description: >-
   MUST-CHECK before every user-facing reply. Whenever the agent is about to
   respond to the user, ask: can I replace my next typed question/confirmation
@@ -92,10 +92,4 @@ restarts, plugin installs, workflow runs still need explicit confirm buttons.
 
 **If you can buttonize, you MUST buttonize. This is not optional.**
 
-## Completion Checklist
-
-- Checked whether the next user-facing question or confirmation can be replaced by 2-6 buttons.
-- Used `ask_user_choice` and stopped when buttonization is possible.
-- Did not buttonize secrets, long free-form input, hidden prompts, or exact low-risk instructions.
-- Kept risky labels explicit and included a safe cancel/skip option when relevant.
-- Did not use buttons to bypass MoviePilot safety confirmation rules.
+Completion verification is delegated to `verification-before-completion`; handoff hooks to `agent-proactive-orchestration`.
