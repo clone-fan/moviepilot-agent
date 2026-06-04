@@ -1,4 +1,5 @@
 ---
+version: 1
 name: chinese-code-review
 description: 中文 review 沟通参考——话术模板、分级标注（必须修复/建议修改/仅供参考）、国内团队常见反模式应对。仅在用户显式 /chinese-code-review 时调用，不要根据上下文自动触发。
 ---
@@ -275,3 +276,13 @@ LGTM
 - [ ] 没有纠结于工具能自动处理的风格问题
 - [ ] 对好的代码给予了肯定
 - [ ] 给出了整体总结
+
+## Trigger Boundary
+
+This is an explicit-trigger support skill. Use it only when the user names this skill or clearly asks for this exact documentation/convention domain. Do not let it preempt MoviePilot media, site, subscription, download, transfer, Agent Git, or system maintenance routes.
+
+## Completion Checklist
+
+- Keep guidance scoped to the requested convention/domain.
+- Do not modify MoviePilot source code or runtime configuration through this skill.
+- If a durable Agent capability file is changed, validate the file and hand off repository sync reminders.

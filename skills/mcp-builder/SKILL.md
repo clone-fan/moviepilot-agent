@@ -1,4 +1,5 @@
 ---
+version: 1
 name: mcp-builder
 description: MCP 服务器构建方法论 — 系统化构建生产级 MCP 工具，让 AI 助手连接外部能力
 ---
@@ -253,3 +254,13 @@ server.sendLoggingMessage({ level: "info", data: "处理中" });
 - [ ] README 含安装和配置说明
 - [ ] 提供客户端配置 JSON 示例
 - [ ] 遵循 semver，无硬编码密钥
+
+## Trigger Boundary
+
+This is an explicit-trigger support skill. Use it only when the user names this skill or clearly asks for this exact documentation/convention domain. Do not let it preempt MoviePilot media, site, subscription, download, transfer, Agent Git, or system maintenance routes.
+
+## Completion Checklist
+
+- Keep guidance scoped to the requested convention/domain.
+- Do not modify MoviePilot source code or runtime configuration through this skill.
+- If a durable Agent capability file is changed, validate the file and hand off repository sync reminders.

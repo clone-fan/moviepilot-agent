@@ -1,4 +1,5 @@
 ---
+version: 1
 name: finishing-a-development-branch
 description: 当实现完成、所有测试通过、需要决定如何集成工作时使用——通过提供合并、PR 或清理等结构化选项来引导开发工作的收尾
 ---
@@ -198,3 +199,16 @@ git worktree remove <worktree-path>
 
 **配合使用：**
 - **using-git-worktrees** - 清理由该技能创建的工作树
+
+## MoviePilot Agent Adaptation
+
+- This skill is workflow support, not the primary MoviePilot business route.
+- Do not override direct routes, resource search, media operations, safety confirmation, or completion verification.
+- Use it only when the user request truly matches the skill trigger; otherwise hand back to the MoviePilot domain skill.
+
+## Completion Checklist
+
+- Confirm the selected workflow actually fits the user request.
+- Keep outputs actionable and bounded; avoid turning simple MoviePilot tasks into heavy planning.
+- Before any completion claim, run or cite fresh verification appropriate to the change.
+- If durable `/config/agent` capability assets changed, trigger the repository sync reminder path.

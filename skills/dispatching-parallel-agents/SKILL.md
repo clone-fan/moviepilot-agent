@@ -1,4 +1,5 @@
 ---
+version: 1
 name: dispatching-parallel-agents
 description: 当面对 2 个以上可以独立进行、无共享状态或顺序依赖的任务时使用
 ---
@@ -180,3 +181,16 @@ Task("修复 tool-approval-race-conditions.test.ts 的失败")
 - 所有排查并发完成
 - 所有修复成功集成
 - 智能体之间的更改零冲突
+
+## MoviePilot Agent Adaptation
+
+- This skill is workflow support, not the primary MoviePilot business route.
+- Do not override direct routes, resource search, media operations, safety confirmation, or completion verification.
+- Use it only when the user request truly matches the skill trigger; otherwise hand back to the MoviePilot domain skill.
+
+## Completion Checklist
+
+- Confirm the selected workflow actually fits the user request.
+- Keep outputs actionable and bounded; avoid turning simple MoviePilot tasks into heavy planning.
+- Before any completion claim, run or cite fresh verification appropriate to the change.
+- If durable `/config/agent` capability assets changed, trigger the repository sync reminder path.

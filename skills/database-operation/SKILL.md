@@ -1,6 +1,6 @@
 ---
 name: database-operation
-version: 2
+version: 4
 description: >-
   Use this skill when you need to execute SQL against the MoviePilot database.
   This skill guides you through connecting to the database and executing SQL statements.
@@ -230,3 +230,34 @@ When writing queries, be aware of differences between SQLite and PostgreSQL:
 - **psql not found**: For PostgreSQL, if `psql` is not available, use Python: `python3 -c "import psycopg2; ..."`
 - **Permission denied**: Database queries require admin privileges
 - **Table not found**: Use the "list all tables" query first to verify table names
+
+## MoviePilot Database Safety
+
+Use raw SQL only when MCP/API/tools cannot answer or fix the record-level issue. Prefer read-only SQL first. Any UPDATE/DELETE/INSERT requires explicit user authorization and a narrowly scoped WHERE clause.
+
+## Completion Checklist
+
+- Show the table/record scope and whether the operation was read-only or mutating.
+- For mutations, verify affected row count and re-query the changed rows.
+- Never write secrets from SQL output into memory, repo, or final replies.
+
+## MoviePilot Database Operation Guardrails
+
+Use raw SQL only when existing MoviePilot tools cannot answer the question or the
+user explicitly asks to inspect/repair database records.
+
+### Read Before Write
+
+- Prefer read-only SELECT queries for statistics and diagnosis.
+- For writes, require explicit user authorization and identify the exact table,
+  rows, and rollback risk.
+- Never store or print secrets from credential-bearing tables.
+- Do not use database edits to bypass normal MoviePilot APIs unless there is no
+  safe supported route.
+
+### Verification
+
+- After SELECT, summarize counts and filters used.
+- After an authorized write, re-query the affected rows.
+- For maintenance cleanup, report affected row counts and any remaining blockers.
+

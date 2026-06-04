@@ -1,6 +1,6 @@
 ---
 name: transfer-failed-retry
-version: 1
+version: 2
 description: Use this skill when you need to retry failed file transfers/organizations. Given one or more failed transfer history record IDs, this skill guides you through querying the failure details, deleting the old records, and re-identifying and re-organizing the files. Supports batch processing of multiple files from the same media (e.g., multiple episodes of a TV show). This skill is automatically triggered when the system detects transfer failures and the AI agent retry feature is enabled.
 allowed-tools: query_transfer_history delete_transfer_history recognize_media transfer_file search_media
 ---
@@ -183,3 +183,20 @@ delete_transfer_history(history_id=42)
 transfer_file(file_path="/downloads/Movie.Name.2024.1080p.mkv", tmdbid=123456, media_type="movie")
 # Success!
 ```
+
+## MoviePilot Safety Gate
+
+Deleting a failed transfer history record is required before retry, but it is still a destructive database action. If the user did not explicitly request retry for the record IDs, ask for confirmation before deleting records.
+
+Use the smallest safe batch:
+
+- Same media and same failure reason -> identify once, then process records sequentially.
+- Different media or different failure reasons -> split into groups.
+- Missing source path, missing transfer directory, or permission/config errors -> stop and report the blocker instead of repeatedly retrying.
+
+## Completion Checklist
+
+- Query failed records before deleting anything.
+- Confirm source path, error reason, media identity, and whether batch grouping is safe.
+- After each retry, validate with transfer history or library existence.
+- Final summary must include success count, failed count, skipped count, and the next blocker for failures.

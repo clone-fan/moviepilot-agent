@@ -1,4 +1,5 @@
 ---
+version: 1
 name: chinese-commit-conventions
 description: 中文 commit 与 changelog 配置参考——Conventional Commits 中文适配、commitlint/husky/commitizen 中文模板、conventional-changelog 中文配置。仅在用户显式 /chinese-commit-conventions 时调用，不要根据上下文自动触发。
 ---
@@ -362,3 +363,13 @@ A: 团队内统一即可。推荐中文（可读性好），但需在 commitlint
 
 **Q: 多人协作时如何保证规范一致？**
 A: 靠工具而非靠自觉。配置好 husky + commitlint，不符合规范的提交会被拦截。
+
+## Trigger Boundary
+
+This is an explicit-trigger support skill. Use it only when the user names this skill or clearly asks for this exact documentation/convention domain. Do not let it preempt MoviePilot media, site, subscription, download, transfer, Agent Git, or system maintenance routes.
+
+## Completion Checklist
+
+- Keep guidance scoped to the requested convention/domain.
+- Do not modify MoviePilot source code or runtime configuration through this skill.
+- If a durable Agent capability file is changed, validate the file and hand off repository sync reminders.

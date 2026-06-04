@@ -1,4 +1,5 @@
 ---
+version: 1
 name: chinese-git-workflow
 description: 国内 Git 平台配置参考——Gitee、Coding.net、极狐 GitLab、CNB 的 SSH/HTTPS/凭据/CI 接入差异与镜像同步配置。仅在用户显式 /chinese-git-workflow 时调用，不要根据上下文自动触发。
 ---
@@ -545,3 +546,13 @@ desktop.ini
 - [ ] PR/MR 描述填写完整
 - [ ] CI 流水线通过
 - [ ] 已请求相关同事 Review
+
+## Trigger Boundary
+
+This is an explicit-trigger support skill. Use it only when the user names this skill or clearly asks for this exact documentation/convention domain. Do not let it preempt MoviePilot media, site, subscription, download, transfer, Agent Git, or system maintenance routes.
+
+## Completion Checklist
+
+- Keep guidance scoped to the requested convention/domain.
+- Do not modify MoviePilot source code or runtime configuration through this skill.
+- If a durable Agent capability file is changed, validate the file and hand off repository sync reminders.

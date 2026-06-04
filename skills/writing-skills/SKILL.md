@@ -1,4 +1,5 @@
 ---
+version: 1
 name: writing-skills
 description: 当创建新技能、编辑现有技能或在部署前验证技能是否有效时使用
 ---
@@ -652,3 +653,16 @@ helper1、helper2、step3、pattern4
 同样的好处：更高的质量、更少的意外、无懈可击的结果。
 
 如果你对代码遵循 TDD，对技能也应如此。这是同样的纪律应用于文档。
+
+## MoviePilot Agent Adaptation
+
+- This skill is workflow support, not the primary MoviePilot business route.
+- Do not override direct routes, resource search, media operations, safety confirmation, or completion verification.
+- Use it only when the user request truly matches the skill trigger; otherwise hand back to the MoviePilot domain skill.
+
+## Completion Checklist
+
+- Confirm the selected workflow actually fits the user request.
+- Keep outputs actionable and bounded; avoid turning simple MoviePilot tasks into heavy planning.
+- Before any completion claim, run or cite fresh verification appropriate to the change.
+- If durable `/config/agent` capability assets changed, trigger the repository sync reminder path.

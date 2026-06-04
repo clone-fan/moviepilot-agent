@@ -1,6 +1,6 @@
 ---
 name: browser-use
-version: 1
+version: 3
 description: >-
   Use this skill when the user asks the agent to open, browse, inspect, extract
   content from, click through, fill forms on, screenshot, or verify a web page
@@ -209,3 +209,35 @@ User: `这个页面按钮点一下后截图给我看`
 1. `browse_webpage action="goto" url="..."`
 2. `browse_webpage action="click" selector="text=<button text>"`
 3. `browse_webpage action="screenshot"`
+
+## MoviePilot Browser Use Boundary
+
+Use browser interaction only when page rendering, login UI, screenshots, or visible JavaScript errors matter. Prefer MoviePilot tools for normal site status, cookies, media search, downloads, and subscriptions.
+
+## Completion Checklist
+
+- Capture the page URL/context and the visible result.
+- Do not expose cookies, tokens, passwords, or private form values.
+- If browser inspection changes site credentials or settings, require explicit authorization and validate with `test_site` when applicable.
+
+## MoviePilot Browser Verification Rules
+
+Use browser interaction only when a page is JavaScript-rendered, needs visible
+login-state inspection, needs form interaction, or needs screenshot-level
+confirmation.
+
+### Guardrails
+
+- Prefer MoviePilot site tools for tracker availability before opening a browser.
+- Never ask the user to paste cookies, passwords, tokens, or 2FA secrets into a
+  public reply.
+- For credential updates, use dedicated site cookie tools when possible.
+- Do not use browser automation to bypass site rules or access controls.
+
+### Verification
+
+- For site login checks, combine visible browser evidence with `test_site` when
+  possible.
+- For form changes, re-open or re-query the affected state.
+- For screenshots/files, send them only when they materially help the user.
+

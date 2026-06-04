@@ -1,4 +1,5 @@
 ---
+version: 1
 name: workflow-runner
 description: "在 Claude Code / OpenClaw / Cursor 中直接运行 agency-orchestrator YAML 工作流——无需 API key，使用当前会话的 LLM 作为执行引擎。当用户提供 .yaml 工作流文件或要求多角色协作完成任务时触发。"
 ---
@@ -170,3 +171,16 @@ metadata.json 格式：
 - **角色文件不存在**：提示用户运行 `ao init` 或 `npm install agency-agents-zh`
 - **模板变量未定义**：检查上下文，如果是必填输入则向用户询问
 - **步骤执行失败**：标记该步骤为失败，跳过所有依赖它的下游步骤，继续执行其他独立步骤
+
+## MoviePilot Agent Adaptation
+
+- This skill is workflow support, not the primary MoviePilot business route.
+- Do not override direct routes, resource search, media operations, safety confirmation, or completion verification.
+- Use it only when the user request truly matches the skill trigger; otherwise hand back to the MoviePilot domain skill.
+
+## Completion Checklist
+
+- Confirm the selected workflow actually fits the user request.
+- Keep outputs actionable and bounded; avoid turning simple MoviePilot tasks into heavy planning.
+- Before any completion claim, run or cite fresh verification appropriate to the change.
+- If durable `/config/agent` capability assets changed, trigger the repository sync reminder path.

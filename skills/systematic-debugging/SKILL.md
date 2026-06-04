@@ -1,4 +1,5 @@
 ---
+version: 1
 name: systematic-debugging
 description: 遇到任何 bug、测试失败或异常行为时使用，在提出修复方案之前执行
 ---
@@ -294,3 +295,35 @@ description: 遇到任何 bug、测试失败或异常行为时使用，在提出
 - 随意修复方法：2-3 小时反复折腾
 - 一次修复成功率：95% vs 40%
 - 引入新 bug：几乎为零 vs 经常发生
+
+## MoviePilot Debugging Matrix
+
+For MoviePilot issues, locate the failing stage before proposing a fix:
+
+1. Site/auth/range: enabled sites, cookies, proxy, priority, search/subscribe scope.
+2. Recognition: title parsing, TMDB/Douban ID, season/episode mapping, custom identifiers.
+3. Resource discovery: torrent/115 result availability, filters, quality, seeders, promotions.
+4. Download: downloader connection, task state, save path, tags, tracker status.
+5. Transfer/library: transfer history, source existence, target directory, media server visibility.
+6. Notifications/plugins/system: plugin config, scheduler/workflow state, logs.
+
+## Completion Checklist
+
+- State root cause or the most likely narrowed stage; do not jump straight to a patch.
+- Verify any claimed fix with the matching MoviePilot authority.
+- If a destructive or high-impact fix is needed, ask for confirmation before executing it.
+
+
+## MoviePilot Debugging Adapter
+
+When debugging MoviePilot behavior, follow the operational matrix before proposing fixes:
+
+1. Site/authentication: enabled state, selected scope, cookie/API validity, connectivity, priority.
+2. Recognition: parsed title/year/type/season/episode, custom identifiers, TMDB/Douban binding.
+3. Resource/search: site results, filters, quality/resolution/effect constraints, promotions/seeders.
+4. Download: downloader connection, task status, save path, tags, errors, speed/seed availability.
+5. Transfer/library: transfer history, failed records, source path, target directory, permissions, media server existence.
+6. Notification/scheduler/plugin: saved config, runtime reload state, last run output, registered commands/services.
+
+Do not patch symptoms. Identify the first broken stage, test one hypothesis at a time, and verify with the authoritative MoviePilot tool before declaring the issue fixed.
+

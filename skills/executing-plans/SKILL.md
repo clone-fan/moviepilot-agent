@@ -1,4 +1,5 @@
 ---
+version: 1
 name: executing-plans
 description: 当你有一份书面实现计划需要在单独的会话中执行，并设有审查检查点时使用
 ---
@@ -173,3 +174,16 @@ $ git commit -m "feat: 添加用户输入验证（任务 2/5）"
 - **superpowers:using-git-worktrees** - 必需：开始前建立隔离的工作空间
 - **superpowers:writing-plans** - 创建此技能要执行的计划
 - **superpowers:finishing-a-development-branch** - 所有任务完成后收尾开发
+
+## MoviePilot Agent Adaptation
+
+- This skill is workflow support, not the primary MoviePilot business route.
+- Do not override direct routes, resource search, media operations, safety confirmation, or completion verification.
+- Use it only when the user request truly matches the skill trigger; otherwise hand back to the MoviePilot domain skill.
+
+## Completion Checklist
+
+- Confirm the selected workflow actually fits the user request.
+- Keep outputs actionable and bounded; avoid turning simple MoviePilot tasks into heavy planning.
+- Before any completion claim, run or cite fresh verification appropriate to the change.
+- If durable `/config/agent` capability assets changed, trigger the repository sync reminder path.

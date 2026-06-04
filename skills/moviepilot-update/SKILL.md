@@ -1,6 +1,6 @@
 ---
 name: moviepilot-update
-version: 2
+version: 5
 description: Use this skill when you need to check MoviePilot versions, restart MoviePilot, or trigger a MoviePilot upgrade. Prefer the built-in system APIs instead of docker commands or manual file replacement. If auto-update on restart is already enabled, just restart. If it is disabled, call the upgrade API so MoviePilot performs a one-shot upgrade and restart.
 ---
 
@@ -72,3 +72,52 @@ python ../moviepilot-api/scripts/mp-api.py POST /api/v1/system/upgrade --json '"
 - These operations require administrator authentication.
 - Restart or upgrade will interrupt the current agent session. Do not rely on post-restart follow-up steps in the same run.
 - Prefer the API flow above. Only fall back to manual container commands when the API is unavailable.
+
+## Safety Gate
+
+- Version checks are read-only and can run directly.
+- Restart and upgrade are high-impact operations: ask for explicit confirmation before calling them.
+- Prefer MoviePilot API/system route. Do not use docker restart, manual file replacement, or shell service control unless the built-in route is unavailable and the user explicitly asked for fallback handling.
+- Warn that restart/upgrade can interrupt the current agent session; do not promise post-restart verification in the same turn unless an external check is available.
+
+## Completion Checklist
+
+- Version check -> report current version, latest/version source, and whether update is needed.
+- Restart/upgrade dispatch -> report that the built-in operation was triggered, not that the service already recovered unless separately verified.
+- If API call fails -> do one narrower fallback check of API configuration or system status, then report the blocker.
+
+## Distilled Update Safety
+
+- Version checks are read-only and may run directly. Restart and upgrade are high-impact and require explicit confirmation unless the user gave the exact restart/upgrade command.
+- Prefer MoviePilot built-in API/update flow; do not replace files manually or run Docker-level restart unless the user explicitly asks and the API path is unavailable.
+- Before upgrade, record current version/channel; after restart/upgrade, re-check version or service health before claiming success.
+- If auto-update is enabled, restart is enough; if disabled, use the one-shot upgrade API rather than changing persistent settings.
+- On failure, report the last confirmed state and next safe diagnostic step.
+
+## Distilled Update / Restart Flow
+
+Use official MoviePilot update/restart APIs or slash commands before container or
+shell-level service manipulation.
+
+### Flow
+
+1. Check current version or update settings when relevant.
+2. If auto-update on restart is enabled, prefer a confirmed restart.
+3. If auto-update is disabled and the user asked to upgrade, use the official
+   one-shot upgrade route.
+4. Avoid docker/service commands unless official routes are unavailable and the
+   user explicitly authorized the operational risk.
+
+### Confirmation
+
+Restart, stop, and upgrade are high-impact actions. Ask for explicit confirmation
+unless the user already gave a precise confirmed command.
+
+### Verification
+
+- After version check, report the actual version source.
+- After restart/upgrade dispatch, verify the API returns or service becomes
+  reachable when possible.
+- If verification cannot be completed because the service is restarting, state
+  the handoff and next check clearly.
+

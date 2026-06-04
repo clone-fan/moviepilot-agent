@@ -1,6 +1,6 @@
 ---
 name: work-completion-workflow
-version: 3
+version: 5
 description: 工作完成标准流程 - 用于任务完成后的主动闭环：最小验证、整理归纳、必要归档与 hook 检查。避免机械式申请、逐步等待、手写 activity 或污染长期记忆。
 allowed-tools: "edit_file write_file read_file"
 compatibility: "适用于需要整理收尾的工作；不替代 verification-before-completion、agent-proactive-orchestration 或 moviepilot-agent-git-maintenance"
@@ -70,3 +70,52 @@ compatibility: "适用于需要整理收尾的工作；不替代 verification-be
 - 验证证据。
 - 是否触发了必要 hook。
 - 是否还有阻塞或待用户选择。
+
+## Distilled Closure Patterns
+
+- For `/config/agent/skills` changes: re-read frontmatter, check name equals directory, version exists, trigger description is concrete, and completion/safety rules exist.
+- For jobs: verify `JOB.md` frontmatter, status lifecycle, last_run semantics, and that scripts live under `/config/agent/scripts`.
+- For Git-backed capability assets: run the dedicated Git maintenance workflow after local validation; do not mix commit/push rules into the business skill.
+- For media operations: completion means MoviePilot state changed or an external handoff was dispatched, not just that a plan was written.
+- For failed or partial work: report exact remaining blockers and the smallest next safe action.
+
+## Anti-Regression Checklist
+
+Before final response, check:
+
+1. Did I avoid writing transient process into memory?
+2. Did I avoid editing activity logs manually?
+3. Did I run fresh verification for every completion claim?
+4. Did I trigger a repository sync reminder after durable `/config/agent` capability changes?
+5. If a user choice remains, did I use buttons instead of a typed question?
+
+## Distilled Closure Rules
+
+- Close with evidence, not ceremony: summarize the smallest verified result and the next blocker only if one exists.
+- Do not archive transient process into memory; memory is only for durable preferences/rules.
+- For `/config/agent` capability changes, trigger the repository-sync handoff after validation.
+- For recurring jobs, confirm `status` remains `pending` and `last_run` is updated after execution.
+- For media operations, include the current pipeline point: site, recognition, resource, download, transfer, or library.
+- If user choice is required for the next step, use buttons rather than a typed menu.
+
+## Distilled Completion Closure
+
+Use this to close work cleanly without turning every finish into a long ritual.
+
+### Closure Steps
+
+1. Verify the changed state with the smallest fresh check.
+2. Summarize only what changed, what was validated, and any remaining blocker.
+3. If `/config/agent` capability assets changed, trigger the repository sync
+   reminder through `moviepilot-agent-git-maintenance`.
+4. Do not write single-task history into memory; activity logs handle that.
+5. Do not archive runtime caches, logs, secrets, or transient files.
+
+### Output Shape
+
+- Result first.
+- Evidence second.
+- Next blocker or optional sync choice last.
+
+Avoid vague claims like “应该可以了”. Use evidence-backed language only.
+

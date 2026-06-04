@@ -1,4 +1,5 @@
 ---
+version: 1
 name: chinese-documentation
 description: 中文文档排版参考——中英文空格、全半角标点、术语保留、链接格式、中文文案排版指北约定。仅在用户显式 /chinese-documentation 时调用，不要根据上下文自动触发。
 ---
@@ -446,3 +447,13 @@ Run `npm install`, then `npm test`.
 - [ ] 代码块标注了语言类型
 - [ ] 链接可以正常访问
 - [ ] 图片有 alt 文本
+
+## Trigger Boundary
+
+This is an explicit-trigger support skill. Use it only when the user names this skill or clearly asks for this exact documentation/convention domain. Do not let it preempt MoviePilot media, site, subscription, download, transfer, Agent Git, or system maintenance routes.
+
+## Completion Checklist
+
+- Keep guidance scoped to the requested convention/domain.
+- Do not modify MoviePilot source code or runtime configuration through this skill.
+- If a durable Agent capability file is changed, validate the file and hand off repository sync reminders.

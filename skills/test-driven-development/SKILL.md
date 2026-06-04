@@ -1,4 +1,5 @@
 ---
+version: 1
 name: test-driven-development
 description: 在实现任何功能或修复 bug 时使用，在编写实现代码之前
 ---
@@ -369,3 +370,16 @@ PASS
 ```
 
 没有你的人类伙伴的许可，没有例外。
+
+## MoviePilot Agent Adaptation
+
+- This skill is workflow support, not the primary MoviePilot business route.
+- Do not override direct routes, resource search, media operations, safety confirmation, or completion verification.
+- Use it only when the user request truly matches the skill trigger; otherwise hand back to the MoviePilot domain skill.
+
+## Completion Checklist
+
+- Confirm the selected workflow actually fits the user request.
+- Keep outputs actionable and bounded; avoid turning simple MoviePilot tasks into heavy planning.
+- Before any completion claim, run or cite fresh verification appropriate to the change.
+- If durable `/config/agent` capability assets changed, trigger the repository sync reminder path.

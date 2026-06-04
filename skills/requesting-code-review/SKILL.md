@@ -1,4 +1,5 @@
 ---
+version: 1
 name: requesting-code-review
 description: 完成任务、实现重要功能或合并前使用，用于验证工作成果是否符合要求
 ---
@@ -103,3 +104,16 @@ HEAD_SHA=$(git rev-parse HEAD)
 - 要求澄清
 
 参见模板：requesting-code-review/code-reviewer.md
+
+## MoviePilot Agent Adaptation
+
+- This skill is workflow support, not the primary MoviePilot business route.
+- Do not override direct routes, resource search, media operations, safety confirmation, or completion verification.
+- Use it only when the user request truly matches the skill trigger; otherwise hand back to the MoviePilot domain skill.
+
+## Completion Checklist
+
+- Confirm the selected workflow actually fits the user request.
+- Keep outputs actionable and bounded; avoid turning simple MoviePilot tasks into heavy planning.
+- Before any completion claim, run or cite fresh verification appropriate to the change.
+- If durable `/config/agent` capability assets changed, trigger the repository sync reminder path.

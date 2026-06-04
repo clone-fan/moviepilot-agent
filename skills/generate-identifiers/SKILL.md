@@ -1,6 +1,6 @@
 ---
 name: generate-identifiers
-version: 2
+version: 4
 description: >-
   Use this skill when a user provides a torrent name or file name and wants to fix recognition issues,
   or asks to add/manage custom identifiers (自定义识别词).
@@ -266,3 +266,34 @@ The `WordsMatcher.prepare()` method (in `app/core/meta/words.py`) processes each
 - Add comment lines before new rules for maintainability
 - Remember that new rules are global. If a rule looks broad, rewrite it to include more sample-specific anchors before saving.
 - When uncertain about the correct approach, present multiple options and let the user choose
+
+## Distilled Identifier Safety
+
+- Custom identifiers are global. Generate the narrowest sample-specific rule that fixes the provided torrent/file name without matching common release words broadly.
+- Always query existing identifiers first, merge changes, and save the full list only after de-duplication.
+- Prefer contextual regex with title/season/episode/group anchors, capture groups, and TMDB binding for difficult cases.
+- Validate by re-running recognition on the original sample and at least one likely collision pattern when available.
+- Final response must state the exact rule intent, pollution risk, and recognition evidence.
+
+## Distilled Identifier Verification
+
+Custom identifiers are global. Treat every rule as potentially dangerous until
+it is anchored and tested.
+
+### Rulecraft
+
+- Prefer sample-specific regex with title/alias, year, group tag, season/episode,
+  or other distinctive anchors.
+- Avoid bare generic terms such as `REPACK`, `WEB-DL`, `1080p`, `字幕`, or simple
+  episode numbers unless the user explicitly wants global cleanup.
+- Use TMDB/Douban direct binding only when media identity is confirmed.
+- For non-standard TV/anime numbering, prefer contextual episode offset rules.
+
+### Verification
+
+- Query existing identifiers before updating.
+- Merge new rules; never replace the full list from memory alone.
+- Run recognition against the provided sample after saving when possible.
+- If recognition cannot be tested, state that the rule was saved but not fully
+  verified.
+
