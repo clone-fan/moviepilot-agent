@@ -1,16 +1,16 @@
 ---
 name: 固定模板心跳播报
-description: 每天最多一次，在 agent_heartbeat 唤醒时采集真实 MoviePilot 内部数据并按固定模板直发 Telegram；唯一执行命令：/opt/venv/bin/python /config/heartbeat_report.py；成功输出 OK；recurring 执行后保持 pending。
+description: 已改为由系统 cron 每天 22:00 直接执行 /opt/venv/bin/python /config/heartbeat_report.py；本 Agent Job 不再由 agent_heartbeat 触发，避免重复发送。
 schedule: recurring
 status: pending
-last_run: "2026-06-02 20:02"
+last_run: "2026-06-07 15:23"
 ---
 # 固定模板心跳播报任务
 
 ## 目标
 将旧 `simple-heartbeat-report` 蒸馏为新的固定模板心跳 Job。
 
-本 Job 只做一件事：在 `agent_heartbeat` 唤醒时，执行确定性脚本 `/config/heartbeat_report.py`，通过 MoviePilot 内部路径采集真实数据，并按固定模板直发 Telegram。
+本 Job 已停用，不再由 `agent_heartbeat` 唤醒执行。当前固定模板心跳播报改由系统 cron 每天 22:00 直接执行 `/config/heartbeat_report.py`，用于避免与其它 Agent Job 混跑。
 
 ## 固定模板版本
 `2026-05-29.fixed-v1-locked`
@@ -90,17 +90,20 @@ last_run: "2026-06-02 20:02"
 成功标准：脚本退出码为 `0` 且输出 `OK`。
 
 ## 执行规则
-1. 只在系统 `agent_heartbeat` 实际唤醒时执行，不自行推导运行窗口。
-2. 不读取聊天上下文生成数据。
-3. 不让 AI 参与模板渲染。
-4. recurring 任务执行后更新本 Job 的 `last_run`，状态保持 `pending`。
-5. 失败时记录错误，保留现场，等待排查。
+1. 本 Job 仅作为定时播报方案的登记与审计记录，不再由 `agent_heartbeat` 唤醒执行。
+2. 实际执行入口为系统 cron：每天 `22:00`（容器本地时区）运行 `/opt/venv/bin/python /config/heartbeat_report.py`。
+3. 不读取聊天上下文生成数据。
+4. 不让 AI 参与模板渲染。
+5. recurring 记录保持 `pending`，实际执行成功后由巡检或人工更新 `last_run`。
+6. 失败时记录错误，保留现场，等待排查。
 
 ## 验证记录
 - **2026-05-29 14:31** - 已验证 `/config/heartbeat_report.py` 可通过 `py_compile`，并能按锁定模板渲染真实内部数据。
 
 ## 执行日志
 
+- **2026-06-07 17:11** - 按少爷确认切换为系统 cron 方案；已确认 `/etc/cron.d/moviepilot-heartbeat-report` 存在，内容为每天 22:00 执行 `/opt/venv/bin/python /config/heartbeat_report.py` 并写入 `/config/logs/heartbeat_report_cron.log`；本 Job 改为 recurring/pending 仅保留登记与审计用途。
+- **2026-06-07 15:23** - 执行命令：/opt/venv/bin/python /config/heartbeat_report.py；结果：成功；输出：OK；固定模板播报已发送。
 - **2026-06-02 20:02** - 执行命令：/opt/venv/bin/python /config/heartbeat_report.py；结果：成功；输出：OK
 
 - **2026-05-29 16:04** - 按少爷要求执行全量心跳 Job 检查并手动触发一次：已清理脚本未用导入与审计字符串缩进等维护性障碍；通过 `py_compile`、三种下载器呈现模拟、栏目顺序断言、旧字段残留断言；随后实际运行 `/opt/venv/bin/python /config/heartbeat_report.py` 发送成功，脚本输出 `OK`；从本次通知日志提取已发送文本复核，确认下载器为 `⦁ 正在下载：无`，无乱码、无 0 速度、无可转移/做种字段，状态保持 pending。
