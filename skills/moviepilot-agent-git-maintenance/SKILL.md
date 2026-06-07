@@ -1,6 +1,6 @@
 ---
 name: moviepilot-agent-git-maintenance
-version: 4
+version: 5
 description: >-
   Use this skill when maintaining the moviepilot-agent Git repository, syncing
   Agent capability assets, prompting for repository sync after /config/agent
@@ -219,6 +219,111 @@ git config --local --list | rg '^(user.name|user.email)'
 
 Do not store personal email unless the user explicitly provides it and wants it
 used.
+
+## Git SSH / Deploy Key Troubleshooting Distillation
+
+Use this distilled checklist whenever GitHub SSH, Deploy Key, remote alias,
+or push permission problems appear. Do not put this workflow into long-term
+memory; keep it here so it is loaded only when this Git maintenance skill is
+selected.
+
+### Evidence Before Judgement
+
+Never treat `Permission denied (publickey)` as proof that the user has not
+configured a public key. First distinguish these cases:
+
+- a dedicated key exists but the repository remote still uses plain
+  `git@github.com:OWNER/REPO.git`;
+- an SSH Host alias exists but Git is not using the configured ssh config;
+- authentication or `git fetch` works but the Deploy Key is read-only;
+- the repository requires `ssh.github.com` on port `443`;
+- the configured key belongs to another repository or another host alias.
+
+If the user says the key was already configured, assume an alias/remote/key
+permission mapping issue until inspected.
+
+### Canonical Inspection Order
+
+For any maintained Git repository, inspect in this order before changing
+configuration or asking the user to regenerate keys:
+
+```bash
+git remote -v
+git status --short
+git branch -vv
+find /config/agent/runtime/git /root/.ssh /home -maxdepth 2 -type f 2>/dev/null
+ssh-keygen -lf /config/agent/runtime/git/<repo-key>.pub
+ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -T git@<host-alias>
+GIT_SSH_COMMAND='ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -o StrictHostKeyChecking=accept-new' \
+  git fetch origin main
+```
+
+Prefer reading `/config/agent/runtime/git/REPO_SSH_MAP.md` for repository-specific
+non-secret anchors: repository name, local path, Host alias, public-key
+fingerprint, and purpose. This runtime file should contain facts only, not lessons, and is not part of always-loaded long-term memory.
+
+### Remote Alias Rules
+
+If a repository has a dedicated Host alias, its remote should use that alias:
+
+```text
+git@<host-alias>:OWNER/REPO.git
+```
+
+Example:
+
+```text
+git@github.com-moviepilot-css:clone-fan/moviepilot-css.git
+```
+
+When running Git commands against aliased hosts in this runtime, explicitly pass
+the ssh config unless already proven unnecessary:
+
+```bash
+GIT_SSH_COMMAND='ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -o StrictHostKeyChecking=accept-new' git fetch origin main
+```
+
+### Read Access Is Not Write Access
+
+`ssh -T` success or `git fetch` success only proves the key can authenticate
+and read. It does not prove push permission. For Deploy Keys, write permission
+requires GitHub repository settings to enable `Allow write access`.
+
+If push fails with:
+
+```text
+ERROR: Permission to OWNER/REPO.git denied to deploy key
+```
+
+then keep the local commit, ask for write access or a new writable Deploy Key,
+and after permission is fixed continue pushing the existing `HEAD`. Do not redo
+the work.
+
+### Generating Or Replacing Deploy Keys
+
+When generating a repository-specific key:
+
+- store it under `/config/agent/runtime/git/`;
+- use a repository-specific filename and comment, e.g.
+  `moviepilot-css_ed25519` / `moviepilot-css-runtime`;
+- never show or store the private key;
+- show only the `.pub` content and public fingerprint;
+- configure a dedicated Host alias in `/config/agent/runtime/git/ssh_config`;
+- update the repository remote to the Host alias after user authorization;
+- record only non-sensitive anchors in `/config/agent/runtime/git/REPO_SSH_MAP.md`.
+
+### Completion Verification
+
+After a push, verify with fresh evidence:
+
+```bash
+git fetch origin main
+test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+git status --short
+git --no-pager log --oneline -3
+```
+
+Only then claim that the repository is synchronized.
 
 ## Maintenance Workflow
 

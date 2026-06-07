@@ -1,7 +1,7 @@
 ---
 name: Agent 技能路由
-version: 7.1.0
-last_updated: 2026-06-02
+version: 7.2.0
+last_updated: 2026-06-07
 ---
 
 # Agent 技能路由
@@ -29,6 +29,10 @@ last_updated: 2026-06-02
 - 新功能/行为设计：`brainstorming`，复杂时再 `writing-plans`
 - 执行书面计划：`executing-plans` / `subagent-driven-development`
 - 完成前：`verification-before-completion`
+
+## 蒸馏规则
+- 特定任务的稳定流程、排障顺序、检查清单、命令模板应优先进对应 skill，不留在 memory。
+- 非敏感运行锚点如仓库名、本地路径、Host 别名、公钥指纹应优先放 runtime，并由相关 skill 引用。
 
 ## 维护使命
 `moviepilot-agent` 是 Agent 能力资产管理仓库；维护目标是可迁移、可审计、可恢复、可持续演进，不是普通源码项目。
