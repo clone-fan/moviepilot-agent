@@ -1,6 +1,6 @@
 ---
 name: 固定模板心跳播报
-description: 定时采集真实 MoviePilot 内部数据并按固定模板直发 Telegram；唯一执行命令：/opt/venv/bin/python /config/heartbeat_report.py；成功输出 OK；recurring 执行后保持 pending。
+description: 每天最多一次，在 agent_heartbeat 唤醒时采集真实 MoviePilot 内部数据并按固定模板直发 Telegram；唯一执行命令：/opt/venv/bin/python /config/heartbeat_report.py；成功输出 OK；recurring 执行后保持 pending。
 schedule: recurring
 status: pending
 last_run: "2026-06-02 20:02"
