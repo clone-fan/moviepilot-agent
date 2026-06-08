@@ -8,6 +8,7 @@ description: >-
   only then state the conclusion. Never use memory, previous runs, or
   assumptions as evidence. This is a non-negotiable pre-completion gate.
   If you cannot show fresh evidence, you cannot claim completion.
+allowed-tools: execute_command read_file list_directory
 ---
 
 # 完成前验证

@@ -1,7 +1,8 @@
 ---
-version: 1
+version: 2
 name: finishing-a-development-branch
 description: 当实现完成、所有测试通过、需要决定如何集成工作时使用——通过提供合并、PR 或清理等结构化选项来引导开发工作的收尾
+allowed-tools: execute_command ask_user_choice
 ---
 
 # 完成开发分支
@@ -45,24 +46,18 @@ npm test / cargo test / pytest / go test ./...
 git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null
 ```
 
-或者询问："这个分支是从 main 分出来的——对吗？"
+如果基础分支无法自动确定，交给 `tg-button-interaction` 用按钮选择常见基础分支；不要要求用户手输例行确认。
 
 ### 步骤 3：展示选项
 
-展示以下 4 个选项：
+通过 `ask_user_choice` 展示以下 4 个按钮并停止本轮：
 
-```
-实现已完成。你想怎么做？
+- `本地合并` -> `git:merge-local`
+- `推送PR` -> `git:push-pr`
+- `保持现状` -> `git:keep`
+- `丢弃工作` -> `git:discard`
 
-1. 在本地合并回 <base-branch>
-2. 推送并创建 Pull Request
-3. 保持分支现状（我稍后处理）
-4. 丢弃这项工作
-
-选哪个？
-```
-
-**不要添加解释** - 保持选项简洁。
+保持选项简洁，不要求用户手输编号。
 
 ### 步骤 4：执行选择
 
@@ -114,17 +109,14 @@ EOF
 
 #### 选项 4：丢弃
 
-**先确认：**
-```
-这将永久删除：
-- 分支 <name>
-- 所有提交：<commit-list>
-- 工作树 <path>
+**先用按钮确认高风险删除：**
 
-输入 'discard' 确认。
-```
+通过 `ask_user_choice` 展示：
 
-等待精确的确认。
+- `确认丢弃` -> `confirm:discard-branch`
+- `取消` -> `cancel`
+
+提示中必须列出将永久删除的分支、提交和工作树。按钮回调确认后才执行；不要要求用户手输 `discard`，除非按钮链路正在修复。
 
 确认后：
 ```bash
@@ -175,7 +167,7 @@ git worktree remove <worktree-path>
 
 **丢弃时不确认**
 - **问题：** 意外删除工作成果
-- **修复：** 要求输入 "discard" 确认
+- **修复：** 使用明确按钮确认，按钮不可用时才临时要求精确文本确认
 
 ## 红线
 
@@ -188,7 +180,7 @@ git worktree remove <worktree-path>
 **始终：**
 - 在提供选项前验证测试
 - 准确展示 4 个选项
-- 选项 4 要求输入确认
+- 选项 4 使用明确按钮确认；按钮不可用时才临时使用精确文本确认
 - 只在选项 1 和 4 时清理工作树
 
 ## 集成

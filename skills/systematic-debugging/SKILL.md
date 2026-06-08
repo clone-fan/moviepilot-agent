@@ -1,329 +1,85 @@
 ---
-version: 1
+version: 2
 name: systematic-debugging
-description: 遇到任何 bug、测试失败或异常行为时使用，在提出修复方案之前执行
+description: 遇到任何 bug、测试失败或异常行为时使用，在提出修复方案之前执行；要求先定位根因、再做最小修复、最后用新鲜证据验证。
+allowed-tools: execute_command read_file list_directory task subagent_task
 ---
 
-# 系统化调试
+# Systematic Debugging
 
-## 概述
+## Purpose
 
-随意修复既浪费时间又会引入新 bug。草率的补丁只会掩盖深层问题。
+Use this skill whenever something is failing, flaky, inconsistent, or surprising. The goal is to fix the root cause with evidence, not to stack guesses.
 
-**核心原则：** 在尝试修复之前，务必先找到根本原因。只修症状就是失败。
+Core rule:
 
-**敷衍走流程等于违背调试的精神。**
-
-## 铁律
-
-```
-不做根因调查，不许提修复方案
+```text
+No root-cause evidence, no fix claim.
 ```
 
-如果你还没完成第一阶段，就不能提出修复方案。
-
-## 何时使用
+## When to Use
 
-用于任何技术问题：
-- 测试失败
-- 生产环境 bug
-- 异常行为
-- 性能问题
-- 构建失败
-- 集成问题
+Use for:
 
-**尤其在以下情况必须使用：**
-- 时间紧迫（紧急情况最容易让人猜测式修复）
-- 觉得"一个小修改"就能搞定
-- 已经尝试了多种修复
-- 上一次修复没有生效
-- 你没有完全理解问题
+- test, build, script, plugin, scheduler, workflow, or command failures;
+- MoviePilot site/search/download/subscription/transfer/library anomalies;
+- repeated Agent behavior failures such as tool misuse, missed verification, or wrong routing;
+- performance or integration issues where the broken layer is unclear.
 
-**以下情况也不要跳过：**
-- 问题看起来很简单（简单的 bug 也有根本原因）
-- 你很赶时间（越急越容易返工）
-- 领导要求立刻修好（系统化调试比反复尝试更快）
+Do not use it to delay exact low-risk work that already has a known fix and verification path.
 
-## 四个阶段
+## Debugging Loop
 
-你必须完成每个阶段后才能进入下一个。
+1. **Read the failure**
+   - Capture the exact error, command output, log line, status, file path, or tool result.
+   - Do not paraphrase away important details.
 
-### 第一阶段：根因调查
+2. **Reproduce or confirm state**
+   - Run the smallest command or MoviePilot query that proves the issue still exists.
+   - If it cannot be reproduced, collect more state instead of guessing.
 
-**在尝试任何修复之前：**
+3. **Localize the layer**
+   - Identify where the chain breaks: configuration, authentication, scheduler, plugin, API, database, downloader, transfer, media recognition, filesystem, or Agent skill/router.
+   - For multi-component flows, check boundaries in order and stop at the first unsupported assumption.
 
-1. **仔细阅读错误信息**
-   - 不要跳过错误或警告
-   - 它们往往直接包含解决方案
-   - 完整阅读堆栈跟踪
-   - 记下行号、文件路径、错误码
+4. **Compare with a working reference**
+   - Find a similar working config, command, plugin route, skill file, or media workflow.
+   - Note the meaningful differences.
 
-2. **稳定复现**
-   - 你能可靠地触发它吗？
-   - 具体的复现步骤是什么？
-   - 每次都能复现吗？
-   - 如果无法复现 → 收集更多数据，不要猜测
+5. **Form one hypothesis**
+   - State: “I think X is the cause because Y evidence.”
+   - Change only what tests that hypothesis.
 
-3. **检查近期变更**
-   - 什么变更可能导致了这个问题？
-   - git diff、最近的提交
-   - 新依赖、配置变更
-   - 环境差异
-
-4. **在多组件系统中收集证据**
+6. **Apply the smallest safe fix**
+   - Respect confirmation policy for destructive/high-impact actions.
+   - Avoid unrelated cleanup while debugging.
 
-   **当系统有多个组件时（CI → 构建 → 签名，API → 服务 → 数据库）：**
+7. **Verify fresh**
+   - Re-run the failing command/query or an authoritative equivalent.
+   - Check exit code, returned state, logs, or file content.
+   - If the check fails, do not stack random patches; return to localization with the new evidence.
 
-   **在提出修复方案之前，先添加诊断埋点：**
-   ```
-   对每个组件边界：
-     - 记录进入组件的数据
-     - 记录离开组件的数据
-     - 验证环境/配置的传递
-     - 检查每一层的状态
-
-   执行一次以收集证据，确定断裂点在哪里
-   然后分析证据，定位故障组件
-   然后针对该组件深入调查
-   ```
-
-   **示例（多层系统）：**
-   ```bash
-   # 第 1 层：工作流
-   echo "=== Secrets available in workflow: ==="
-   echo "IDENTITY: ${IDENTITY:+SET}${IDENTITY:-UNSET}"
-
-   # 第 2 层：构建脚本
-   echo "=== Env vars in build script: ==="
-   env | grep IDENTITY || echo "IDENTITY not in environment"
-
-   # 第 3 层：签名脚本
-   echo "=== Keychain state: ==="
-   security list-keychains
-   security find-identity -v
-
-   # 第 4 层：实际签名
-   codesign --sign "$IDENTITY" --verbose=4 "$APP"
-   ```
-
-   **由此可以看出：** 哪一层出了问题（secrets → workflow ✓, workflow → build ✗）
-
-5. **跟踪数据流**
-
-   **当错误发生在调用栈深处时：**
-
-   参见本目录下的 `root-cause-tracing.md`，了解完整的反向追踪技术。
-
-   **简要版本：**
-   - 错误值从哪里产生的？
-   - 谁用错误值调用了这里？
-   - 持续向上追踪直到找到源头
-   - 在源头修复，而不是在症状处修复
-
-### 第二阶段：模式分析
-
-**先找到模式，再修复：**
-
-1. **找到可正常工作的示例**
-   - 在同一代码库中找到类似的正常代码
-   - 有什么正常的代码与出问题的代码相似？
-
-2. **与参考实现对比**
-   - 如果是实现某个模式，完整阅读参考实现
-   - 不要略读——逐行阅读
-   - 在应用之前彻底理解该模式
-
-3. **识别差异**
-   - 正常代码和出问题的代码之间有什么不同？
-   - 列出每一个差异，无论多小
-   - 不要假设"那不可能有影响"
-
-4. **理解依赖关系**
-   - 这个功能需要哪些其他组件？
-   - 需要哪些设置、配置、环境？
-   - 它有哪些隐含假设？
-
-### 第三阶段：假设与验证
-
-**科学方法：**
-
-1. **提出单一假设**
-   - 清晰地陈述："我认为 X 是根本原因，因为 Y"
-   - 写下来
-   - 要具体，不要含糊
-
-2. **最小化测试**
-   - 做出最小的改动来验证假设
-   - 每次只改一个变量
-   - 不要同时修复多个问题
-
-3. **继续之前先验证**
-   - 生效了？是 → 进入第四阶段
-   - 没生效？提出新假设
-   - 不要在上面叠加更多修复
-
-4. **当你不确定时**
-   - 说"我不理解 X"
-   - 不要假装自己知道
-   - 寻求帮助
-   - 做更多调研
-
-### 第四阶段：实施
-
-**修复根本原因，而非症状：**
-
-1. **创建失败的测试用例**
-   - 最简化的复现
-   - 尽可能用自动化测试
-   - 没有测试框架就写一次性测试脚本
-   - 修复前必须先有测试
-   - 使用 `superpowers:test-driven-development` 技能来编写规范的失败测试
-
-2. **实施单一修复**
-   - 修复已定位的根本原因
-   - 每次只改一处
-   - 不做"顺便改改"的优化
-   - 不捆绑重构
+## MoviePilot Evidence Hints
 
-3. **验证修复**
-   - 测试现在通过了吗？
-   - 其他测试没有被破坏吧？
-   - 问题真的解决了吗？
-
-4. **如果修复不起作用**
-   - 停下来
-   - 数一数：你已经尝试了几次修复？
-   - 少于 3 次：回到第一阶段，用新信息重新分析
-   - **3 次或以上：停下来质疑架构（见下方第 5 步）**
-   - 没有经过架构讨论，不要尝试第 4 次修复
+- Site/search issue → check enabled sites, auth/test result, search scope, recognition, and filters.
+- Download issue → check downloader config, task status, save path, tracker/site health, and seeds.
+- Subscription issue → check subscription state, season/episode counts, filters, sites, library existence, and history.
+- Transfer/library issue → check transfer history, source path, permissions, recognition, target directory, and media server state.
+- Plugin issue → check installed plugin, saved config, capabilities, logs, reload state, and registered commands/services.
+- Agent skill issue → check relevant `SKILL.md`, memory/router references, stale platform terms, frontmatter, and minimal structure assertions.
 
-5. **如果 3 次以上修复都失败了：质疑架构**
+## Escalation Rules
 
-   **以下模式表明存在架构问题：**
-   - 每次修复都暴露出新的共享状态/耦合/其他位置的问题
-   - 修复需要"大规模重构"才能实现
-   - 每次修复都在其他地方产生新的症状
+- After two failed fixes, pause and re-check the layer boundary.
+- After three failed fixes, treat it as a design or assumption problem and produce options instead of another patch.
+- If credentials, deletion, restart, download start, plugin install/uninstall, or external service changes are required, ask confirmation first.
 
-   **停下来质疑根本性问题：**
-   - 这个模式从根本上合理吗？
-   - 我们是不是在"惯性驱动"下坚持了错误方案？
-   - 应该重构架构还是继续修补症状？
+## Output Contract
 
-   **在尝试更多修复之前，和你的搭档讨论**
+When reporting debugging work, include:
 
-   这不是假设失败——这是架构有误。
-
-## 红线——停下来，按流程走
-
-如果你发现自己在想：
-- "先临时修一下，以后再排查"
-- "试着改改 X 看看行不行"
-- "一次性改多个地方，跑测试看看"
-- "跳过测试，我手动验证"
-- "大概是 X 的问题，让我修一下"
-- "我不完全理解，但这应该能行"
-- "模式说的是 X，但我换个方式用"
-- "主要问题有这些：[未经调查就列出修复方案]"
-- 没有追踪数据流就提出解决方案
-- **"再试一次修复"（已经尝试了 2 次以上）**
-- **每次修复都暴露出不同地方的新问题**
-
-**以上这些都意味着：停下来。回到第一阶段。**
-
-**如果 3 次以上修复都失败了：** 质疑架构（见第四阶段第 5 步）
-
-## 搭档发出的信号——说明你的方法不对
-
-**留意这些提醒：**
-- "难道不是这样吗？"——你在没有验证的情况下做了假设
-- "它能告诉我们……吗？"——你应该先收集证据
-- "别猜了"——你在没有理解的情况下提出修复
-- "深入想想"——要质疑根本性问题，而不只是症状
-- "我们卡住了？"（沮丧的语气）——你的方法没有奏效
-
-**当你看到这些信号时：** 停下来。回到第一阶段。
-
-## 常见借口
-
-| 借口 | 现实 |
-|------|------|
-| "问题很简单，不需要走流程" | 简单问题也有根本原因。对于简单 bug，流程很快就能走完。 |
-| "紧急情况，没时间走流程" | 系统化调试比反复猜测式修复更快。 |
-| "先试一下，再排查" | 第一次修复就定下了基调。从一开始就做对。 |
-| "确认修复有效后再写测试" | 没有测试的修复留不住。先写测试才能证明修复有效。 |
-| "一次修多个问题省时间" | 无法隔离哪个生效了。还会引入新 bug。 |
-| "参考实现太长了，我自己改改" | 一知半解必然出 bug。完整阅读。 |
-| "我看出问题了，让我修一下" | 看到症状 ≠ 理解根因。 |
-| "再试一次"（在 2 次以上失败后） | 3 次以上失败 = 架构问题。质疑模式，不要继续修。 |
-
-## 速查表
-
-| 阶段 | 关键活动 | 通过标准 |
-|------|---------|---------|
-| **1. 根因** | 阅读错误、复现、检查变更、收集证据 | 理解了什么出了问题以及为什么 |
-| **2. 模式** | 找到正常示例、对比 | 识别出差异 |
-| **3. 假设** | 提出理论、最小化验证 | 假设被验证或产生新假设 |
-| **4. 实施** | 创建测试、修复、验证 | bug 已修复，测试通过 |
-
-## 当流程显示"找不到根因"
-
-如果系统化排查后发现问题确实是环境相关、时序相关或外部因素导致的：
-
-1. 你已经完成了流程
-2. 记录你排查了什么
-3. 实施适当的处理措施（重试、超时、错误提示）
-4. 添加监控/日志以便后续排查
-
-**但是：** 95% 的"找不到根因"其实是排查不充分。
-
-## 辅助技术
-
-以下技术是系统化调试的组成部分，可在本目录中找到：
-
-- **`root-cause-tracing.md`** - 沿调用栈反向追踪 bug，找到最初的触发点
-- **`defense-in-depth.md`** - 找到根因后，在多个层级添加校验
-- **`condition-based-waiting.md`** - 用条件轮询替代硬编码等待时间
-
-**相关技能：**
-- **superpowers:test-driven-development** - 用于创建失败测试用例（第四阶段，第 1 步）
-- **superpowers:verification-before-completion** - 在宣称成功之前验证修复确实有效
-
-## 实际效果
-
-调试实践中的数据：
-- 系统化方法：15-30 分钟修复
-- 随意修复方法：2-3 小时反复折腾
-- 一次修复成功率：95% vs 40%
-- 引入新 bug：几乎为零 vs 经常发生
-
-## MoviePilot Debugging Matrix
-
-For MoviePilot issues, locate the failing stage before proposing a fix:
-
-1. Site/auth/range: enabled sites, cookies, proxy, priority, search/subscribe scope.
-2. Recognition: title parsing, TMDB/Douban ID, season/episode mapping, custom identifiers.
-3. Resource discovery: torrent/115 result availability, filters, quality, seeders, promotions.
-4. Download: downloader connection, task state, save path, tags, tracker status.
-5. Transfer/library: transfer history, source existence, target directory, media server visibility.
-6. Notifications/plugins/system: plugin config, scheduler/workflow state, logs.
-
-## Completion Checklist
-
-- State root cause or the most likely narrowed stage; do not jump straight to a patch.
-- Verify any claimed fix with the matching MoviePilot authority.
-- If a destructive or high-impact fix is needed, ask for confirmation before executing it.
-
-
-## MoviePilot Debugging Adapter
-
-When debugging MoviePilot behavior, follow the operational matrix before proposing fixes:
-
-1. Site/authentication: enabled state, selected scope, cookie/API validity, connectivity, priority.
-2. Recognition: parsed title/year/type/season/episode, custom identifiers, TMDB/Douban binding.
-3. Resource/search: site results, filters, quality/resolution/effect constraints, promotions/seeders.
-4. Download: downloader connection, task status, save path, tags, errors, speed/seed availability.
-5. Transfer/library: transfer history, failed records, source path, target directory, permissions, media server existence.
-6. Notification/scheduler/plugin: saved config, runtime reload state, last run output, registered commands/services.
-
-Do not patch symptoms. Identify the first broken stage, test one hypothesis at a time, and verify with the authoritative MoviePilot tool before declaring the issue fixed.
-
+- observed failure evidence;
+- root-cause hypothesis or confirmed cause;
+- exact fix applied, if any;
+- fresh verification evidence;
+- remaining blocker if the root cause is not yet proven.

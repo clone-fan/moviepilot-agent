@@ -1,189 +1,72 @@
 ---
-version: 1
+version: 2
 name: executing-plans
-description: 当你有一份书面实现计划需要在单独的会话中执行，并设有审查检查点时使用
+description: 当已有书面实现计划且需要按检查点执行、验证和收尾时使用；适用于 MoviePilot Agent 可用工具链，不依赖外部任务清单工具。
+allowed-tools: read_file list_directory execute_command edit_file write_file ask_user_choice
 ---
 
-# 执行计划
+# Executing Plans
 
-## 概述
+## Purpose
 
-加载计划，批判性审查，执行所有任务，完成后报告。
+Execute an existing written plan without turning it into endless discussion. This skill is for implementation discipline, not for designing the plan itself.
 
-**开始时宣布：** "我正在使用 executing-plans 技能来实现此计划。"
+Use it after a plan already exists and the next step is to carry it out safely inside the MoviePilot Agent environment.
 
-**注意：** 告诉你的人类伙伴，Superpowers 在有子代理支持时效果好得多。如果在支持子代理的平台上运行（如 Claude Code 或 Codex），其工作质量会显著提高。如果子代理可用，请使用 superpowers:subagent-driven-development 而非此技能。
+## Entry Check
 
-## 流程
+Before executing:
 
-### 步骤 1：加载并审查计划
+1. Read the plan or the referenced task context.
+2. Identify the target files, commands, or MoviePilot operations.
+3. Classify risk:
+   - Low-risk `/config/agent` or `/config` local plugin asset change → execute directly when the user asked to continue.
+   - High-impact action such as deletion, download start, credential change, plugin install/uninstall, restart, scheduler/workflow execution, or broad cleanup → ask for confirmation, preferably with buttons.
+   - Ambiguous target or missing required input → ask one focused clarification.
+4. If the plan is unsafe or internally inconsistent, stop before mutation and report the concrete issue.
 
-1. 读取计划文件
-2. 批判性审查——识别计划中的任何问题或疑虑
-3. 如果有疑虑：在开始之前向你的人类伙伴提出
-4. 如果没有疑虑：创建 TodoWrite 并继续
+## Execution Loop
 
-**审查时重点检查：**
-- 步骤之间是否有依赖遗漏？（A 依赖 B，但 B 排在 A 之后）
-- 验证条件是否明确？（"确认可用"不算，"运行 `npm test` 全部通过"才算）
-- 是否有隐含的环境假设？（Node 版本、数据库连接、API Key）
+For each plan item:
 
-**审查示例：**
-```
-计划文件：docs/plan.md
-任务清单：5 个任务
+1. Re-read the item and its acceptance condition.
+2. Perform the smallest correct action with the narrowest tool path.
+3. Run fresh verification before moving on.
+4. If verification fails, diagnose once with a narrower check; do not claim completion.
+5. Continue to the next independent item only after the current item has evidence.
 
-审查发现：
-- 任务 3（添加数据库迁移）应在任务 2（编写数据模型）之后，顺序正确 ✓
-- 任务 4 的验证条件写的是"确认功能正常"→ 需澄清：具体跑什么测试？
-- 计划未提及 Python 版本要求 → 需确认
-
-向伙伴提出：
-"计划整体可执行。有两个问题：(1) 任务 4 的验证条件不够具体，建议改为
-'运行 pytest tests/test_api.py 全部通过'；(2) 需要确认 Python 版本要求。"
-```
-
-### 步骤 2：执行任务
-
-对于每个任务：
-
-1. **标记为进行中** — 更新 TodoWrite
-2. **理解目标** — 重读任务描述，明确完成标准
-3. **执行实现** — 严格按照计划步骤执行（计划已有小步骤）
-4. **运行验证** — 按要求运行测试或检查
-5. **提交变更** — 每完成一个任务提交一次，commit message 引用任务编号
-6. **标记为已完成** — 更新 TodoWrite
-
-**每个任务的节奏：**
-```
---- 任务 2/5：添加用户验证 ---
-[标记进行中]
-
-目标：为 /api/users 添加输入验证
-完成标准：所有验证测试通过，无效输入返回 400
-
-[实现]
-- 添加 validateUser() 中间件
-- 编写 3 个验证规则（email 格式、密码强度、用户名长度）
-
-[验证]
-$ npm test -- --grep "validation"
-  ✓ 拒绝无效 email (12ms)
-  ✓ 拒绝弱密码 (8ms)
-  ✓ 拒绝过长用户名 (5ms)
-  3 passing
-
-[提交]
-$ git add src/middleware/validate.js tests/validation.test.js
-$ git commit -m "feat: 添加用户输入验证（任务 2/5）"
-
-[标记完成]
---- 任务 2/5 完成 ---
-```
-
-**批量审查检查点：**
-- 每完成 3 个任务后，暂停回顾：整体方向还对吗？有没有偏离计划？
-- 如果发现前面的实现有问题，先修复再继续，不要带着问题往下走
-
-### 步骤 3：处理常见异常
-
-**测试失败：**
-1. 读错误信息，定位失败原因
-2. 区分：是实现 bug？还是测试本身有问题？还是计划描述有误？
-3. 实现 bug → 修复并重跑
-4. 测试有问题 → 修复测试，向伙伴说明
-5. 计划有误 → 停下来，向伙伴报告并建议修正
-
-**依赖缺失：**
-```
-任务 3 需要 Redis 连接，但计划中没有提及 Redis 配置。
-→ 停止执行
-→ 向伙伴报告："任务 3 需要 Redis，计划中未包含配置步骤。
-   建议：在任务 3 前插入 '配置 Redis 连接' 步骤。"
-```
-
-**指令不清：**
-- 不要猜测意图，不要"合理推断"
-- 列出你的理解和困惑，让伙伴澄清
-- 等待回复后再继续
-
-### 步骤 4：完成开发
-
-所有任务完成并验证后：
-- 宣布："我正在使用 finishing-a-development-branch 技能来完成此工作。"
-- **必需子技能：** 使用 superpowers:finishing-a-development-branch
-- 按照该技能的指引验证测试、展示选项、执行选择
-
-**完成报告模板：**
-```
-## 执行报告
-
-**计划：** docs/plan.md
-**分支：** feature/user-validation
-**任务：** 5/5 已完成
-
-### 完成的任务
-1. ✅ 初始化项目结构
-2. ✅ 添加用户验证
-3. ✅ 添加数据库迁移
-4. ✅ 实现 API 端点
-5. ✅ 添加集成测试
-
-### 验证结果
-- 单元测试：23/23 通过
-- 集成测试：8/8 通过
-- lint 检查：0 个警告
-
-### 偏离计划的地方
-- 任务 3：Redis 配置从 env 改为 config.yaml（经伙伴同意）
-
-### 下一步
-按 finishing-a-development-branch 技能处理合并/PR
-```
-
-## 何时停下来求助
-
-**在以下情况立即停止执行：**
-- 遇到阻塞（缺少依赖、测试失败、指令不清）
-- 计划有严重缺陷导致无法开始
-- 你不理解某条指令
-- 验证反复失败（同一测试失败 2 次以上）
-
-**不确定时就问，不要猜测。**
-
-## 何时回到之前的步骤
-
-**回到审查（步骤 1）当：**
-- 伙伴根据你的反馈更新了计划
-- 根本性的方案需要重新考虑
-
-**不要硬闯阻塞** — 停下来问。
-
-## 注意事项
-- 先批判性审查计划
-- 严格按照计划步骤执行
-- 不要跳过验证
-- 每个任务单独提交，commit message 引用任务编号
-- 计划要求时引用相应技能
-- 遇到阻塞时停下来，不要猜测
-- 未经用户明确同意，绝不在 main/master 分支上开始实现
-
-## 集成
-
-**必需的工作流技能：**
-- **superpowers:using-git-worktrees** - 必需：开始前建立隔离的工作空间
-- **superpowers:writing-plans** - 创建此技能要执行的计划
-- **superpowers:finishing-a-development-branch** - 所有任务完成后收尾开发
+Do not wait for the user after every tiny step when the plan is clear and authorized.
 
 ## MoviePilot Agent Adaptation
 
-- This skill is workflow support, not the primary MoviePilot business route.
-- Do not override direct routes, resource search, media operations, safety confirmation, or completion verification.
-- Use it only when the user request truly matches the skill trigger; otherwise hand back to the MoviePilot domain skill.
+- Use available MCP tools and shell diagnostics directly; do not reference unavailable external task-list tools.
+- Use subagents only for independent read-only investigation or planning; main agent handles writes and confirmations.
+- For `/config/agent` capability assets, prefer editing the relevant skill or memory file, then verify by re-reading or running structural checks.
+- For MoviePilot media operations, follow the domain router: sites → identity → resources → download/subscription/transfer → verification.
+- For repository synchronization, hand off to `moviepilot-agent-git-maintenance` after local verification.
 
-## Completion Checklist
+## Verification Contract
 
-- Confirm the selected workflow actually fits the user request.
-- Keep outputs actionable and bounded; avoid turning simple MoviePilot tasks into heavy planning.
-- Before any completion claim, run or cite fresh verification appropriate to the change.
-- If durable `/config/agent` capability assets changed, trigger the repository sync reminder path.
+A plan item is not complete until fresh evidence exists:
+
+- File/config change → re-read changed lines or run syntax/structure checks.
+- Script/plugin change → compile/check and, if safe, run the minimal command or reload after confirmation when required.
+- Media task → query the relevant MoviePilot state after action.
+- Job task → verify frontmatter status, schedule, last_run behavior, and command result.
+
+## Failure Handling
+
+If execution fails:
+
+1. Report the exact command/tool error, not a vague “工具不可用”.
+2. Try one smaller diagnostic path if safe.
+3. If still blocked, state the blocker and the smallest user decision needed.
+
+## Output Contract
+
+Final response should include:
+
+- what was executed;
+- what verification passed;
+- what remains blocked, if anything;
+- the next safe handoff such as repository sync when relevant.

@@ -2,6 +2,7 @@
 name: brainstorming
 version: 4
 description: "在需求不明确、需要设计取舍、创建新功能/新行为或范围较大的创造性工作之前使用；用户已给出明确最小修改、修复或落地执行指令时，不用它阻塞直接执行。"
+allowed-tools: read_file list_directory execute_command write_file edit_file ask_user_choice
 ---
 
 # 头脑风暴：将想法转化为设计

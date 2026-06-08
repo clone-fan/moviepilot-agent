@@ -1,227 +1,116 @@
 ---
-version: 1
+version: 2
 name: receiving-code-review
-description: 收到代码审查反馈后、实施建议之前使用，尤其当反馈不明确或技术上有疑问时——需要技术严谨性和验证，而非敷衍附和或盲目执行
+description: 收到代码审查反馈后、实施建议之前使用，尤其当反馈不明确或技术上有疑问时——需要技术严谨性和验证，而非敷衍附和或盲目执行。
+allowed-tools: read_file list_directory execute_command edit_file write_file ask_user_choice
 ---
 
 # 接收代码审查
 
-## 概述
+## Purpose
 
-代码审查需要的是技术评估，不是情绪表演。
+Use this skill when the user gives code review feedback, asks to apply review suggestions, or provides external review comments that need technical evaluation before implementation.
 
-**核心原则：** 先验证再实施。先提问再假设。技术正确性优先于社交舒适度。
+The goal is not to agree politely. The goal is to understand, verify, decide, implement safely, and prove the result.
 
-## 响应模式
+## Core Principle
 
-```
-收到代码审查反馈时：
+Review feedback is a technical input, not an automatic command.
 
-1. 阅读：完整阅读反馈，不急于反应
-2. 理解：用自己的话复述需求（或提问）
-3. 验证：对照代码库的实际情况检查
-4. 评估：对这个代码库来说技术上合理吗？
-5. 回应：技术性确认或有理有据的反驳
-6. 实施：一次一项，逐个测试
-```
+Default flow:
 
-## 禁止的回应
+1. Read the feedback completely.
+2. Identify each actionable item.
+3. Clarify ambiguous or conflicting items before writing.
+4. Verify suggestions against the actual codebase.
+5. Decide: implement, reject with evidence, defer, or ask for scope.
+6. Apply one coherent change set at a time.
+7. Run fresh verification before claiming completion.
 
-**绝不要说：**
-- "你说得太对了！"（明确违反 CLAUDE.md 规定）
-- "好观点！"/"反馈很棒！"（敷衍表演）
-- "让我立刻实施"（在验证之前）
+## When To Clarify
 
-**应该这样做：**
-- 复述技术需求
-- 提出澄清性问题
-- 如果审查意见有误，用技术理由反驳
-- 直接动手做（行动胜于言辞）
+Ask before implementing when:
 
-## 处理不明确的反馈
+- the requested change has multiple plausible meanings;
+- multiple review items are interdependent and some are unclear;
+- the feedback conflicts with previous user instructions or safety boundaries;
+- the suggestion is destructive, high-impact, credential-related, or changes external services;
+- the reviewer asks for a feature whose usage or value is uncertain.
 
-```
-如果有任何一项不明确：
-  停下来——先不要实施任何内容
-  就不明确的项目提出澄清
+Use buttons when the user needs to choose between a few concrete options.
 
-为什么：各项之间可能有关联。部分理解 = 错误实施。
-```
+## Technical Evaluation Checklist
 
-**示例：**
-```
-搭档："修复第 1-6 项"
-你理解 1、2、3、6。对 4、5 不确定。
+Before applying a review suggestion, check:
 
-❌ 错误做法：先实施 1、2、3、6，稍后再问 4、5
-✅ 正确做法："第 1、2、3、6 项我理解了。第 4 和第 5 项需要澄清后再动手。"
-```
+- Does the current code actually have the reported problem?
+- Would the suggestion break existing behavior, compatibility, or tests?
+- Is the current implementation intentional because of platform, version, or deployment constraints?
+- Is the suggested feature actually used, or is it YAGNI?
+- Does a smaller fix solve the same issue with less risk?
+- What verification will prove the change worked?
 
-## 按来源区别处理
+For YAGNI checks, inspect actual usage with code search before adding abstractions or unused features.
 
-### 来自搭档的反馈
-- **可信赖** —— 理解后直接实施
-- **仍然要问** 如果范围不明确
-- **不要敷衍附和**
-- **直接行动** 或给出技术性确认
+## Implementation Order
 
-### 来自外部审查者的反馈
-```
-实施之前：
-  1. 检查：对这个代码库来说技术上正确吗？
-  2. 检查：是否会破坏现有功能？
-  3. 检查：当前实现这样写是否有原因？
-  4. 检查：在所有平台/版本上都适用吗？
-  5. 检查：审查者了解完整上下文吗？
+For multi-item feedback:
 
-如果建议似乎有误：
-  用技术理由反驳
+1. Security, data-loss, crash, or blocking issues.
+2. Small correctness fixes.
+3. Compatibility or regression fixes.
+4. Refactors and cleanup.
+5. Nice-to-have polish.
 
-如果无法轻易验证：
-  说明情况："没有 [X] 我无法验证这一点。我应该 [调查/提问/先做]？"
+Do not batch unrelated changes if separate verification would be clearer.
 
-如果与搭档之前的决策冲突：
-  先停下来和搭档讨论
-```
+## Responding To Feedback
 
-**搭档的原则：** "对外部反馈要持怀疑态度，但要仔细核实"
+When feedback is correct:
 
-## YAGNI 检查——针对"专业化"功能建议
+- state the concrete issue and fix;
+- implement the smallest correct change;
+- show verification evidence.
 
-```
-如果审查者建议"正规地实现"：
-  在代码库中 grep 实际使用情况
+When feedback is wrong or risky:
 
-  如果没人用："这个接口没有被调用。删掉它（YAGNI）？"
-  如果有人用：那就正规实现
-```
+- explain the technical reason briefly;
+- cite code, tests, logs, docs, or compatibility constraints;
+- propose a safer alternative when possible.
 
-**搭档的原则：** "你和审查者都对我负责。如果我们不需要这个功能，就不要加。"
+When verification is impossible with current access:
 
-## 实施顺序
+- state the exact missing evidence;
+- offer the smallest read-only investigation or ask for the missing artifact.
 
-```
-对于包含多项的反馈：
-  1. 先澄清所有不明确的项
-  2. 然后按以下顺序实施：
-     - 阻塞性问题（崩溃、安全）
-     - 简单修复（拼写、导入）
-     - 复杂修复（重构、逻辑）
-  3. 逐个测试每项修复
-  4. 验证没有回归
-```
-
-## 何时反驳
-
-在以下情况反驳：
-- 建议会破坏现有功能
-- 审查者缺少完整上下文
-- 违反 YAGNI（功能没人用）
-- 对当前技术栈来说技术上不正确
-- 存在遗留/兼容性原因
-- 与搭档的架构决策冲突
-
-**如何反驳：**
-- 用技术理由，不要带防御情绪
-- 提出具体问题
-- 引用可正常工作的测试/代码
-- 如果涉及架构问题，让搭档参与
-
-**如果觉得不方便当众反驳，暗号是：** "Strange things are afoot at the Circle K"
-
-## 确认正确的反馈
-
-当反馈确实正确时：
-```
-✅ "已修复。[简要说明改了什么]"
-✅ "发现得好——[具体问题]。已在 [位置] 修复。"
-✅ [直接修复并在代码中体现]
-
-❌ "你说得太对了！"
-❌ "好观点！"
-❌ "感谢你发现了这个！"
-❌ "感谢你 [任何内容]"
-❌ 任何感谢的表达
-```
-
-**为什么不用感谢：** 行动说明一切。直接修复。代码本身就能表明你收到了反馈。
-
-**如果你发现自己要写"感谢"：** 删掉它。直接说明修复内容。
-
-## 优雅地纠正自己的反驳
-
-如果你反驳了但事后发现自己错了：
-```
-✅ "你是对的——我检查了 [X]，确实 [Y]。正在实施。"
-✅ "验证后确认你是对的。我最初的理解有误，因为 [原因]。正在修复。"
-
-❌ 长篇道歉
-❌ 为自己的反驳辩护
-❌ 过度解释
-```
-
-如实陈述纠正，然后继续。
-
-## 常见错误
-
-| 错误 | 修正 |
-|------|------|
-| 敷衍附和 | 复述需求或直接行动 |
-| 盲目实施 | 先对照代码库验证 |
-| 批量实施不测试 | 一次一项，逐个测试 |
-| 假设审查者一定对 | 检查是否会破坏现有功能 |
-| 回避反驳 | 技术正确性 > 社交舒适度 |
-| 部分理解就开始实施 | 先澄清所有项 |
-| 无法验证却继续推进 | 说明限制，请求指导 |
-
-## 真实案例
-
-**敷衍附和（反面例子）：**
-```
-审查者："删除遗留代码"
-❌ "你说得太对了！让我删掉它……"
-```
-
-**技术验证（正面例子）：**
-```
-审查者："删除遗留代码"
-✅ "查了一下……构建目标是 10.15+，这个 API 需要 13+。向后兼容需要保留遗留代码。当前实现有错误的 bundle ID——修复它还是放弃 pre-13 支持？"
-```
-
-**YAGNI（正面例子）：**
-```
-审查者："实现完善的指标追踪，包括数据库、日期过滤、CSV 导出"
-✅ "在代码库中 grep 了一下——没有任何地方调用这个接口。删掉它（YAGNI）？还是有我遗漏的调用？"
-```
-
-**不明确的项（正面例子）：**
-```
-搭档："修复第 1-6 项"
-你理解 1、2、3、6。对 4、5 不确定。
-✅ "第 1、2、3、6 项我理解了。第 4 和第 5 项需要澄清后再动手。"
-```
-
-## GitHub 评论回复
-
-在 GitHub 上回复行内审查评论时，在评论线程中回复（`gh api repos/{owner}/{repo}/pulls/{pr}/comments/{id}/replies`），不要发顶层 PR 评论。
-
-## 底线
-
-**外部反馈 = 待评估的建议，不是必须执行的命令。**
-
-验证。质疑。然后实施。
-
-不要敷衍附和。始终保持技术严谨。
+Avoid performative agreement, defensive arguing, long apologies, or implementing before validation.
 
 ## MoviePilot Agent Adaptation
 
-- This skill is workflow support, not the primary MoviePilot business route.
-- Do not override direct routes, resource search, media operations, safety confirmation, or completion verification.
-- Use it only when the user request truly matches the skill trigger; otherwise hand back to the MoviePilot domain skill.
+- This is a workflow support skill, not a MoviePilot media route.
+- Do not use it for ordinary site/search/download/subscription/transfer tasks.
+- For `/config/agent` and `/config` local plugin assets, user-authorized low-risk review fixes can be applied directly and verified.
+- MoviePilot core source, credentials, destructive actions, restarts, plugin install/uninstall, and external service changes still follow confirmation policy.
+- If the review concerns an Agent skill, also apply `writing-skills` / `skill-architecture-governance` checks as needed.
 
-## Completion Checklist
+## Verification
 
-- Confirm the selected workflow actually fits the user request.
-- Keep outputs actionable and bounded; avoid turning simple MoviePilot tasks into heavy planning.
-- Before any completion claim, run or cite fresh verification appropriate to the change.
-- If durable `/config/agent` capability assets changed, trigger the repository sync reminder path.
+After changes, run the smallest fresh verification that proves the reviewed issue is addressed:
+
+- syntax or compile checks for code;
+- targeted tests for behavior;
+- grep/assertion for wording or rule changes;
+- frontmatter checks for skills/jobs;
+- repository status and sensitive scan when preparing commit/push.
+
+Never claim that review feedback is resolved without fresh evidence.
+
+## Output Contract
+
+Report:
+
+- review items understood;
+- what was implemented, rejected, deferred, or clarified;
+- verification evidence;
+- remaining risks or next review item;
+- repository sync reminder if durable `/config/agent` assets changed.

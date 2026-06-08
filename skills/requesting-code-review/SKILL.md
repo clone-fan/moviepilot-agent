@@ -1,119 +1,68 @@
 ---
-version: 1
+version: 2
 name: requesting-code-review
-description: 完成任务、实现重要功能或合并前使用，用于验证工作成果是否符合要求
+description: 完成任务、实现重要功能或合并前使用，用于验证工作成果是否符合要求；在 MoviePilot Agent 中优先使用只读子代理或本地验证命令，不依赖外部审查者。
+allowed-tools: task subagent_task execute_command read_file list_directory
 ---
 
-# 请求代码审查
+# Requesting Code Review
 
-派遣 superpowers:code-reviewer 子代理来在问题扩散之前发现它们。审查者获得的是精心组织的评估上下文——绝不是你的会话历史。这样可以让审查者专注于工作成果而非你的思考过程，同时保留你自己的上下文以便继续工作。
+## Purpose
 
-**核心原则：** 早审查，勤审查。
+Use this skill to get an independent check before claiming that an important implementation, skill change, plugin change, or repository sync is ready.
 
-## 何时请求审查
+It is a verification aid, not a replacement for the main Agent's responsibility. The main Agent still owns final decisions, writes, confirmations, and user-facing conclusions.
 
-**必须审查：**
-- 子代理驱动开发中每个任务完成后
-- 完成重要功能后
-- 合并到 main 之前
+## When to Use
 
-**可选但有价值：**
-- 卡住时（换个视角）
-- 重构之前（建立基线）
-- 修复复杂 bug 之后
+Use before:
 
-## 如何请求
+- merging or syncing meaningful `/config/agent` capability changes;
+- shipping a local plugin change;
+- claiming a bug fix is stable;
+- completing a multi-file implementation;
+- touching workflows, jobs, scripts, or routing rules that affect future behavior.
 
-**1. 获取 git SHA：**
-```bash
-BASE_SHA=$(git rev-parse HEAD~1)  # 或 origin/main
-HEAD_SHA=$(git rev-parse HEAD)
-```
+Skip when the change is a tiny text-only correction already covered by a direct structural check.
 
-**2. 派遣 code-reviewer 子代理：**
+## Review Paths
 
-使用 Task 工具，指定 superpowers:code-reviewer 类型，填写 `code-reviewer.md` 中的模板
+Choose the smallest adequate path:
 
-**占位符说明：**
-- `{WHAT_WAS_IMPLEMENTED}` - 你刚完成的内容
-- `{PLAN_OR_REQUIREMENTS}` - 预期功能
-- `{BASE_SHA}` - 起始提交
-- `{HEAD_SHA}` - 结束提交
-- `{DESCRIPTION}` - 简要说明
+1. **Local verification only**
+   - For simple file edits, run syntax, frontmatter, grep, or command checks.
+2. **Read-only subagent review**
+   - For multi-file or cross-domain changes, delegate isolated review with `task` or `subagent_task`.
+   - Ask the subagent to inspect scope, risks, missing validation, and stale references.
+3. **Domain-specific check**
+   - For MoviePilot media/config/plugin work, use the relevant MoviePilot tool or skill to verify real state.
 
-**3. 处理反馈：**
-- Critical 问题立即修复
-- Important 问题在继续之前修复
-- Minor 问题记录下来稍后处理
-- 如果审查者有误，用技术理由反驳
+## Review Brief Template
 
-## 示例
+Give reviewers compact context:
 
-```
-[刚完成任务 2：添加验证功能]
+- changed files or operations;
+- intended behavior;
+- risk boundaries;
+- commands already run;
+- exact questions to answer.
 
-你：让我在继续之前请求代码审查。
+Do not expose secrets. Do not ask subagents to perform writes.
 
-BASE_SHA=$(git log --oneline | grep "Task 1" | head -1 | awk '{print $1}')
-HEAD_SHA=$(git rev-parse HEAD)
+## Integration Rules
 
-[派遣 superpowers:code-reviewer 子代理]
-  WHAT_WAS_IMPLEMENTED: 会话索引的验证和修复功能
-  PLAN_OR_REQUIREMENTS: docs/superpowers/plans/deployment-plan.md 中的任务 2
-  BASE_SHA: a7981ec
-  HEAD_SHA: 3df7661
-  DESCRIPTION: 添加了 verifyIndex() 和 repairIndex()，支持 4 种问题类型
+After review:
 
-[子代理返回]:
-  优点：架构清晰，测试真实
-  问题：
-    Important：缺少进度指示器
-    Minor：报告间隔使用了魔法数字 (100)
-  评估：可以继续
+1. Read the findings.
+2. Fix only confirmed, relevant issues.
+3. Re-run fresh verification.
+4. If the review is inconclusive, say so; do not inflate it into success.
 
-你：[修复进度指示器]
-[继续任务 3]
-```
+## Output Contract
 
-## 与工作流的集成
+Final response should include:
 
-**子代理驱动开发：**
-- 每个任务完成后审查
-- 在问题叠加之前发现它们
-- 修复后再进入下一个任务
-
-**执行计划：**
-- 每批（3 个任务）后审查
-- 获取反馈，修复，继续
-
-**临时开发：**
-- 合并前审查
-- 卡住时审查
-
-## 红线
-
-**绝不要：**
-- 因为"很简单"就跳过审查
-- 忽略 Critical 问题
-- 带着未修复的 Important 问题继续推进
-- 对合理的技术反馈进行争辩
-
-**如果审查者有误：**
-- 用技术理由反驳
-- 展示证明其可行的代码/测试
-- 要求澄清
-
-参见模板：requesting-code-review/code-reviewer.md
-
-## MoviePilot Agent Adaptation
-
-- This skill is workflow support, not the primary MoviePilot business route.
-- Do not override direct routes, resource search, media operations, safety confirmation, or completion verification.
-- Use it only when the user request truly matches the skill trigger; otherwise hand back to the MoviePilot domain skill.
-
-## Completion Checklist
-
-- Confirm the selected workflow actually fits the user request.
-- Keep outputs actionable and bounded; avoid turning simple MoviePilot tasks into heavy planning.
-- Before any completion claim, run or cite fresh verification appropriate to the change.
-- If durable `/config/agent` capability assets changed, trigger the repository sync reminder path.
+- what review/verification path was used;
+- key finding;
+- evidence after fixes;
+- remaining risk or next handoff.
