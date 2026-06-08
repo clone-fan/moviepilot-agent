@@ -119,4 +119,9 @@ def main():
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    code = main()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    # Some MoviePilot internal imports can crash after checks have printed.
+    # Exit immediately so the probe reports the actual check result.
+    os._exit(code)

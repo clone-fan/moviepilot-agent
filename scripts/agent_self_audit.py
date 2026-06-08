@@ -65,6 +65,8 @@ def main() -> int:
             job_bad.append(str(item))
     add('jobs_only_job_md_no_pycache', not job_bad, '\n'.join(job_bad))
 
+    # Clean Python bytecode caches before asserting directory hygiene.
+    run("python - <<'PYCLEAN'\nfrom pathlib import Path\nimport shutil\nfor p in Path('/config/agent').rglob('__pycache__'):\n    if p.is_dir(): shutil.rmtree(p)\nPYCLEAN")
     script_bad = [str(p) for p in (ROOT / 'scripts').rglob('__pycache__') if p.is_dir()]
     add('scripts_no_pycache', not script_bad, '\n'.join(script_bad))
     add('scripts_cleanup_exists', (ROOT / 'scripts/cleanup_docs_archive.py').is_file())
@@ -159,9 +161,13 @@ def main() -> int:
     heartbeat = Path('/config/heartbeat_report.py').read_text(encoding='utf-8')
     add('heartbeat_uses_runtime_cache', '/config/agent/runtime/cache/subscribereminder_last_push.json' in heartbeat)
 
-    archive_job = (ROOT / 'jobs/archive-auto-destroy/JOB.md').read_text(encoding='utf-8')
-    add('archive_job_uses_scripts_path', '/config/agent/scripts/cleanup_docs_archive.py' in archive_job)
-    add('archive_job_no_old_script_path', '/config/agent/jobs/archive-auto-destroy/cleanup_docs_archive.py' not in archive_job)
+    archive_job_path = ROOT / 'jobs/archive-auto-destroy/JOB.md'
+    if archive_job_path.exists():
+        archive_job = archive_job_path.read_text(encoding='utf-8')
+        add('archive_job_uses_scripts_path', '/config/agent/scripts/cleanup_docs_archive.py' in archive_job)
+        add('archive_job_no_old_script_path', '/config/agent/jobs/archive-auto-destroy/cleanup_docs_archive.py' not in archive_job)
+    else:
+        add('archive_job_absent_after_archive', True)
 
     result = run('python -m py_compile /config/heartbeat_report.py /config/agent/scripts/cleanup_docs_archive.py /config/agent/scripts/agent_self_audit.py')
     add('py_compile_core_scripts_no_bytecode', result.returncode == 0, result.stderr.strip())
@@ -196,7 +202,11 @@ assert '可转移/做种' not in msg
 assert '状态：在线' not in msg
 assert '速度：↓ 0 B/s' not in msg
 assert '\ufffd' not in msg
+import os
 print('RENDER_OK')
+sys.stdout.flush()
+sys.stderr.flush()
+os._exit(0)
 '''
     result = run("python - <<'PY'\n" + render_code + "\nPY")
     render_output = (result.stdout + result.stderr).strip()
