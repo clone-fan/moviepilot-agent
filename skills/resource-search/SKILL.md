@@ -1,6 +1,6 @@
 ---
 name: resource-search
-version: 14
+version: 15
 description: >-
   MUST-USE when the user asks to search MoviePilot tracker/torrent resources
   for a movie, TV show, anime, or ambiguous title. Do not route through generic
@@ -9,7 +9,7 @@ description: >-
   media through the shortest path, present one compact card with buttons, then
   route to 115 search or subscription. This is the primary resource discovery
   skill; do not bypass it with general media tools.
-allowed-tools: search_media recognize_media query_library_exists query_subscribes add_subscribe search_subscribe send_message ask_user_choice run_slash_command
+allowed-tools: search_media recognize_media query_library_exists query_subscribes add_subscribe search_subscribe send_message ask_user_choice run_slash_command subagent_task
 ---
 
 # Resource Search
@@ -31,6 +31,27 @@ the user sees the card and chooses.
 - `recognize_media` only for filenames, torrent titles, or paths.
 - Best candidate first; one fallback if needed.
 - No web search for the normal path.
+
+## Parallel Context Gathering
+
+After resolving media identity (TMDB ID, media_type, season), gather library
+and subscription state in one parallel batch instead of three serial calls.
+This cuts user wait time by roughly 2/3 for the typical resource-search flow.
+
+Use `subagent_task` with `action=run` and three tasks:
+
+1. `media-researcher` — call `query_library_exists` with the resolved
+   `tmdb_id` and `media_type`.
+2. `subscription-analyst` — call `query_subscribes` with the resolved
+   `tmdb_id` and `media_type`.
+3. `resource-searcher` — call `query_sites(status="active")` to pre-warm
+   site scope for later torrent search.
+
+The main agent reads all three results privately, then synthesizes the card.
+
+**Fallback**: if `subagent_task` fails or returns incomplete results, fall
+back to direct tool calls one at a time. Do not block the user on a
+subagent infrastructure issue.
 
 ## Source Choice Card
 
@@ -81,7 +102,28 @@ Never omit season casually. In MoviePilot, TV subscription without season means 
 - Review filters before saying there is no resource.
 - Offer subscription when immediate resources are poor but automated monitoring is useful.
 
-### Verification
+#### Resource Availability Discipline
+
+When a candidate skill suggests “get available resources”, map it to MoviePilot resource discovery, not a generic inventory scan:
+
+- resolve media identity first;
+- check library/subscription duplication when it affects action;
+- inspect site scope/health when tracker results are empty or poor;
+- present available choices with source/action boundaries;
+- never convert availability into download without explicit confirmation.
+
+### Availability Triage
+
+When judging whether a media resource is available, separate four states instead of saying only “found/not found”:
+
+- **available now**: matched resources exist and can be presented for user choice;
+- **available but gated**: resources likely exist, but site scope, auth, filter groups, quality rules, or library duplication affects action;
+- **monitor instead**: no good immediate result, but subscription/search-subscribe is useful;
+- **blocked**: identity, site health, filter, or permission is unresolved.
+
+For empty or poor results, check the first likely broken boundary: recognition -> library/subscription duplication -> site scope/health -> filters -> acquisition mode. Do not repeat broad searches when one boundary explains the result.
+
+## Verification
 
 - Download chosen resource → query download task.
 - Create subscription → query subscription.

@@ -1,6 +1,6 @@
 ---
 name: moviepilot-cli
-version: 7
+version: 9
 description: >-
   Use this skill as the general MoviePilot media-operations fallback for movies,
   TV shows, anime, downloads, subscriptions, library management, sites, and
@@ -10,125 +10,125 @@ description: >-
   REST API work, moviepilot-update for upgrade/restart/version tasks,
   transfer-failed-retry for failed organization retries, or identifier skills
   for recognition-word/custom-identifier work.
+allowed-tools: execute_command subagent_task
 ---
 
 # MoviePilot CLI
 
-> All script paths are relative to this skill file.
+## Purpose
 
-Use `scripts/mp-cli.js` to interact with the MoviePilot backend.
+General MoviePilot media-operation fallback when MCP tools or narrower MoviePilot skills do not cover the request clearly.
+
+Prefer current runtime MCP tools first. Use the CLI only when it gives a clearer path, a missing operation, or a command-level fallback.
 
 ## Routing Boundary
 
-This is the broad MoviePilot media-operation fallback, not the first skill for
-every mention of MoviePilot.
+Use narrower routes first:
 
-Prefer narrower skills first:
-
-- `moviepilot-direct-routes`: exact slash commands, direct links, obvious command aliases.
-- `resource-search`: user asks to search/filter resources or pick a source.
-- `moviepilot-api`: user explicitly asks for REST API or CLI/MCP cannot cover an operation.
+- `moviepilot-direct-routes`: slash commands, direct links, obvious command aliases.
+- `resource-search`: search/filter tracker resources or choose a source.
+- `moviepilot-api`: explicit REST API work or tool coverage gap.
 - `moviepilot-update`: version, restart, upgrade.
-- `transfer-failed-retry`: retry failed transfer/organization records.
-- `generate-identifiers` / `media-identifier-rulecraft`: custom identifiers or recognition fixes.
+- `transfer-failed-retry`: failed transfer/organization retry.
+- `generate-identifiers` / `media-identifier-rulecraft`: recognition words or custom identifiers.
 
-Use this skill after that routing check for normal MoviePilot media operations.
+Use this skill only after that routing check for normal MoviePilot media operations.
 
-## Discover Commands
+## CLI Discipline
 
-List all available commands: `node scripts/mp-cli.js list`
+Script path is relative to this skill file:
 
-Show parameters and usage for a specific command: `node scripts/mp-cli.js show <command>`
+```bash
+node scripts/mp-cli.js list
+node scripts/mp-cli.js show <command>
+```
 
-Always run `show <command>` before calling a command — parameter names are not inferable, do not guess.
+Rules:
 
-## Command Groups
+- Always run `show <command>` before command execution; parameter names are not inferable.
+- Do not guess parameter names or translate filter values.
+- Prefer `tmdb_id`; use `douban_id` only when TMDB is unavailable.
+- Omitting `sites=` uses default sites; if user names sites, query site IDs first.
 
-| Category | Commands |
-|---|---|
-| Media Search | search_media, recognize_media, query_media_detail, get_recommendations, search_person, search_person_credits |
-| Torrent | search_torrents, get_search_results |
-| Download | add_download, query_download_tasks, delete_download, query_downloaders |
-| Subscription | add_subscribe, query_subscribes, update_subscribe, delete_subscribe, search_subscribe, query_subscribe_history, query_popular_subscribes, query_subscribe_shares |
-| Library | query_library_exists, query_library_latest, transfer_file, scrape_metadata, query_transfer_history |
-| Files | list_directory, query_directory_settings |
-| Sites | query_sites, query_site_userdata, test_site, update_site, update_site_cookie |
-| System | query_schedulers, run_scheduler, query_workflows, run_workflow, query_rule_groups, query_episode_schedule, send_message |
+Full command groups and command examples live in `REFERENCES.md`.
 
-## Workflows
+## Media Operation Flow
 
-### Search and Download
+1. **Resolve media identity**
+   - Use `search_media` for database lookup.
+   - Use `recognize_media` for torrent/file/path parsing.
+   - Do not confuse identity recognition with torrent search.
+   - **Parallel context pre-fetch**: once TMDB ID and media_type are resolved,
+     dispatch library and subscription checks in parallel via `subagent_task`
+     instead of serial calls:
 
-#### 1. Search TMDB
+     | Check | Subagent | Probe |
+     |---|---|---|
+     | Library | `media-researcher` | `query_library_exists(tmdb_id, media_type)` |
+     | Subscription | `subscription-analyst` | `query_subscribes(tmdb_id, media_type)` |
+     | Sites | `resource-searcher` | `query_sites(status="active")` |
 
-Search for a movie or TV show by title: 
-`node scripts/mp-cli.js search_media title="..." media_type="movie"`
+     Synthesize results privately before deciding acquisition mode. Fall back
+     to direct tool calls if subagent infrastructure fails.
 
-If the user specifies a TV season, run Season Validation step first — the season number provided by the user may not match TMDB.
+2. **Choose acquisition mode**
+   - Immediate acquisition -> search torrents, present results, then confirm before download.
+   - Automation -> subscription tools with season/quality/site constraints.
+   - Direct link -> direct route skill, not generic CLI.
 
-#### 2. Search torrents
+3. **Search resources**
+   - Use `search_torrents` with `tmdb_id` when available.
+   - When it returns filter options, stop and let the user choose filters before `get_search_results`.
+   - Filter values must come from returned options; OR within one field, AND across fields.
 
-Prefer `tmdb_id`; use `douban_id` only when `tmdb_id` is unavailable.
+4. **Present results**
+   - Numbered list with title, size, seeders, resolution, release group, promotion/free state, and relevant expiry.
+   - Do not start downloads without explicit confirmation.
 
-Omitting `sites=` uses the user's default sites. If the user specifies sites, first retrieve site IDs:
-`node scripts/mp-cli.js query_sites`
+5. **Verify state**
+   - Subscription changes -> `query_subscribes`.
+   - Download actions -> `query_download_tasks` or history.
+   - Transfer actions -> `query_transfer_history` or `query_library_exists`.
+   - No-result cases -> check site scope/health, recognition quality, and filters before concluding unavailable.
+   - **Parallel post-action verification**: after download or transfer, verify
+     download task status and transfer history in one parallel batch via
+     `subagent_task` with `download-diagnostician` and `media-researcher`
+     instead of two serial queries.
 
-Search torrents using default sites:
-`node scripts/mp-cli.js search_torrents tmdb_id=791373 media_type="movie"`
+## File and Organization Discipline
 
-Search torrents using user-specified sites (pass site IDs from `query_sites`):
-`node scripts/mp-cli.js search_torrents tmdb_id=791373 media_type="movie" sites='1,3'`
+- Use dedicated transfer or failed-retry skills before generic file operations.
+- Keep source path, target library, media identity, transfer mode, and history state distinct.
+- Verify configured directories and source existence before transfer.
+- Do not delete, move, or overwrite files without explicit confirmation and post-action state check.
+## Media File Inventory Boundary
 
-When `search_torrents` returns:
-1. **Stop** — do not call `get_search_results` yet.
-2. Present all `filter_options` fields and every value within each field to the user verbatim.
-3. Do not pre-select, summarize, or omit any field or value.
-4. Wait for the user to select filters or confirm no filters are needed before moving to the next step.
+When a task sounds like file organization or “what is available”, map it to MoviePilot state rather than a generic filesystem inventory:
 
-#### 3. Get filtered results (only after user has responded to filter_options)
+- **Library availability** -> `query_library_exists` or media-server latest state when identity is known.
+- **Downloaded but not organized** -> download tasks/history plus transfer history.
+- **Failed organization** -> `transfer-failed-retry`, not manual moving.
+- **Unrecognized local files** -> `recognize_media` first, then transfer with explicit identity if needed.
+- **Tracker availability** -> `resource-search` / torrent tools, with site health and filters considered.
 
-Run `node scripts/mp-cli.js show get_search_results` to check available parameters. Filter logic: OR within a field, AND across fields.
+Keep source path, media identity, downloader task, transfer history, and final library state separate in the explanation.
 
-Filter values must come from the `filter_options` returned by `search_torrents` — do not invent, translate, normalize, or use values from any other source. Note: `filter_options` keys are camelCase (e.g., `freeState`), but `get_search_results` params are snake_case (e.g., `free_state`).
+## Safety
 
-Fetch results with selected filters:
-`node scripts/mp-cli.js get_search_results resolution='1080p,2160p' free_state='免费,50%'`
+Explicit confirmation is required for:
 
-If empty, tell the user which filter to relax and ask before retrying.
+- downloads;
+- deletes;
+- scheduler/workflow runs;
+- site credential changes;
+- plugin installs/uninstalls;
+- restarts;
+- destructive file operations.
 
-#### 4. Present results as a numbered list
+For TV shows, never assume full-series subscription. Omitting season means season 1 only; multi-season subscriptions require explicit per-season handling.
 
-Show all results without pre-selection. Each row: index, title, size, seeders, resolution, release group, `volume_factor`, `freedate_diff`.
+## Handoff
 
-## Distilled Rules
-
-### Routing
-
-- Start from the narrowest official route; use this fallback only after direct routes, resource search, update, transfer retry, and identifier skills are ruled out.
-- Prefer MCP tools over shell scripts when the same operation is available in the current runtime. Use CLI only when it gives a clearer or missing path.
-
-### Execution
-
-- For media identity use `search_media` or `recognize_media`; do not confuse these with torrent search.
-- For acquisition use `search_torrents`, subscription tools, or direct link routes according to user intent.
-- For missing-library or landed-file questions, include download, transfer, and library state instead of stopping at one layer.
-- For no-result cases, check site scope/health, recognition quality, and filters before concluding the resource is unavailable.
-
-### Safety
-
-- Downloads, deletes, scheduler/workflow runs, site credential changes, plugin installs, restarts, and file-destructive operations need explicit confirmation.
-- For TV shows, never assume full-series subscription. Confirm or specify each season; omitting season means season 1 only.
-
-### Verification
-
-- After subscription changes, query subscriptions.
-- After download actions, query download tasks or histories.
-- After transfer actions, query transfer history or library existence.
-- After config-like changes, re-read the affected state.
-- If a command fails, try one narrower fallback: check command parameters with `show`, then check site/downloader/library state as appropriate.
-
-### Handoff
-
-If a `/config/agent` capability asset changed during the task, hand off sync reminders to `moviepilot-agent-git-maintenance`; do not silently skip the hook.
+If `/config/agent` capability assets changed during the task, hand off sync reminders to `moviepilot-agent-git-maintenance`.
 
 Completion verification is delegated to `verification-before-completion`.
