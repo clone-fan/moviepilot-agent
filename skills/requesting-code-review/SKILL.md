@@ -25,6 +25,34 @@ Use before:
 
 Skip when the change is a tiny text-only correction already covered by a direct structural check.
 
+## Security Review Lane
+
+Use a security-focused review path when the change touches credentials, auth/session logic, API endpoints, file handling, command execution, external URLs, plugin settings, database access, or logs.
+
+Check at least:
+
+- hardcoded secrets, token/cookie exposure, unsafe logging, and accidental persistence;
+- authorization and confirmation gates for destructive or high-impact actions;
+- command injection, path traversal, unsafe shell usage, SQL/string injection, SSRF/XSS-style URL or HTML handling;
+- dangerous defaults in plugin config, broad file scopes, or missing dry-run/preview for cleanup actions;
+- whether the proposed fix has a verification step and a safe rollback path.
+
+Report severity as `CRITICAL / HIGH / MEDIUM / LOW` with evidence and concrete fix guidance. This lane is advisory; it does not replace MoviePilot safety boundaries.
+
+
+## Review Matrix
+
+For important changes, choose the review lens explicitly:
+
+- **Correctness**: behavior matches the requirement and MoviePilot workflow.
+- **Security**: credentials, auth, destructive actions, shell/path/URL/database risks.
+- **Regression**: existing commands, routes, configs, plugin capabilities, or media flows still work.
+- **Maintainability**: owner is right, duplication is avoided, and future routing is clear.
+- **Evidence**: each claim has a fresh proof bundle.
+
+A review finding must include severity, evidence, and a fix or deferral reason. Do not treat generic style opinions as blockers unless they affect safety, correctness, or maintainability.
+
+
 ## Review Paths
 
 Choose the smallest adequate path:
@@ -57,6 +85,25 @@ After review:
 2. Fix only confirmed, relevant issues.
 3. Re-run fresh verification.
 4. If the review is inconclusive, say so; do not inflate it into success.
+
+## Documentation Review Checks
+
+For docs, skills, plans, and reports, review:
+
+- whether the stated route/owner matches the actual file changed;
+- whether the document creates a duplicate source of truth;
+- whether instructions are executable with available MoviePilot Agent tools;
+- whether claims cite fresh evidence rather than summaries;
+- whether long reference material should move to runtime/docs instead of skill or memory.
+
+## Plugin / UI Documentation Consistency
+
+For MoviePilot plugin or Agent capability changes, add a docs/config-surface lane when relevant:
+
+- README, package metadata, config schema, UI labels, slash commands, workflow actions, and dashboard buttons describe the same behavior.
+- Dangerous actions document preview/confirmation/result semantics, not just the happy path.
+- Version, changelog, default config, and installed plugin capability output do not contradict each other.
+- If a feature is only preview, linkage, or read-only inspection, the docs must not call it full takeover or complete replacement.
 
 ## Output Contract
 

@@ -1,6 +1,6 @@
 ---
 name: verification-before-completion
-version: 6
+version: 7
 description: >-
   MUST-RUN before claiming any work is complete, fixed, or passing. Trigger
   before saying "完成", "搞定", "测试通过", "已修复", or any completion
@@ -13,110 +13,87 @@ allowed-tools: execute_command read_file list_directory
 
 # 完成前验证
 
-## HARD GATE
+## Hard Gate
 
-**Before claiming completion, run this gate. No exceptions.**
+完成声明前必须运行验证。没有新鲜证据，不许说完成、已修复、测试通过、已同步或没问题。
 
-1. What command or authoritative tool proves my claim?
-2. Run it fresh. Read output. Check exit code or returned state.
-3. Does the output actually support the exact claim?
-4. If NO -> report actual state. If YES -> state with evidence.
+验证四问：
 
-Skipping this = lying, not completing.
+1. 哪个命令或权威工具能证明这句话？
+2. 是否刚刚运行并读取了输出？
+3. 输出是否支持我要说的精确范围？
+4. 如果不支持，是否降级为“已写入 / 已触发 / 待验证”？
 
-## 铁律
+## Evidence Matrix
 
-```
-没有新鲜的验证证据，不许宣称完成。
-```
+选择与声明匹配的权威证据：
 
-## 红线
+- 站点可用 -> `query_sites` / `test_site` / 站点用户数据。
+- 下载器或任务 -> `query_downloaders` / `query_download_tasks`。
+- 订阅 -> `query_subscribes`；缺集搜索只证明派发，不证明下载完成。
+- 转移整理 -> `query_transfer_history`，必要时 `query_library_exists`。
+- 媒体身份 -> `search_media` / `query_media_detail` / `recognize_media`。
+- 资源搜索 -> 媒体身份 + 搜索/筛选结果；搜索不等于下载成功。
+- 插件配置 -> `query_plugin_config`；重载只在已授权时执行。
+- 调度/工作流 -> 查询调度/工作流状态 + 派发结果；不夸大为下游成功。
+- Agent skill/config -> 重读文件、检查 frontmatter/name、运行结构断言；若影响路由/钩子，做一次代表性 dry-run、路由检查、命令发现或安全实跑。
+- Git sync -> `git status`、敏感扫描、自检、push/fetch、工作区干净。
+- Job -> 读 `JOB.md`，检查 `status`、`last_run`、recurring 语义，安全时运行命令或 dry-run。
 
-这些词出现时，必须停下并运行验证：
+更完整的 proof floors、异步、性能和报告模板见同目录 `REFERENCES.md`。
 
-- "应该能行"、"大概"、"似乎"、"看起来"
-- "搞定"、"完成"、"过了"、"没问题"
-- "已修复"、"已同步"、"已提交"、"已推送"
-- 要提交/推送/创建 PR 但没有验证
+## Proof Bundle
 
-## 反借口
+Agent 能力、插件、工作流或治理变更的完成证据应压缩成：
 
-| 借口 | 现实 |
-|------|------|
-| "应该能行" | 运行验证 |
-| "我有信心" | 信心 ≠ 证据 |
-| "Linter 过了" | Linter ≠ 完整验证 |
-| "代理说成了" | 独立验证 |
-| "刚才跑过" | 完成前重新跑 |
-| "就这一次" | 没有例外 |
+1. **Command / Tool** — 刚运行的命令或权威工具。
+2. **Output / State** — 关键输出、退出码或状态。
+3. **Claim** — 输出能支持的窄声明。
+4. **Scope** — 覆盖的文件、配置、插件、任务或对象。
+5. **Freshness** — 证据来自本次完成前检查。
 
-## MoviePilot Evidence Matrix
+缺任一项就降级表述，不说“完成”。
 
-Use the authority that matches the claim:
+## Change Proof Floors
 
-- Site fixed/available -> `query_sites`, `test_site`, or site user data when account state matters.
-- Downloader fixed/task added -> `query_downloaders` or `query_download_tasks`.
-- Subscription added/updated -> `query_subscribes`; for missing episodes use `search_subscribe` result only as dispatch evidence.
-- Transfer/organization fixed -> `query_transfer_history` and, when relevant, `query_library_exists`.
-- Media identity -> `search_media`, `query_media_detail`, or `recognize_media` result.
-- Resource search -> media identity plus search/filter result; do not claim download success from search alone.
-- Plugin config changed -> `query_plugin_config`, then reload only if requested/authorized.
-- Scheduler/workflow triggered -> scheduler/workflow query plus dispatch result; do not claim downstream business success without evidence.
-- Agent skill/config changed -> re-read the changed file, run a structural check, and when a hook/router/script was changed, run the matching real command or dry-run once.
-- Git sync -> `git status`, sensitive scan/self-check, push/fetch verification, and clean working tree.
-- Job changed/executed -> read `JOB.md`, check `status`, `last_run`, recurring semantics, and run the job command or dry-run once when safe.
-- Router/skill hook changed -> run the real router check, slash-command discovery, or representative dry-run once; static grep alone is not enough.
+- **Docs/reference** -> 重读文件，必要时检查格式/路径。
+- **Memory/routing/skill governance** -> 重读改动，检查 frontmatter/name，验证规则可发现。
+- **Runtime-affecting skill/hook** -> 结构检查 + 代表性 dry-run、路由检查、命令发现或安全实跑。
+- **Script/config/plugin behavior** -> 语法/编译 + 最小安全执行或权威状态查询。
+- **Job/scheduler/workflow** -> 元数据 + 安全命令/派发检查 + 状态语义。
+- **Git/release/public promise** -> diff、敏感扫描、git status、远端/fetch 证据。
 
-## Evidence Selection Rules
+使用最小充分证据；不要为了显得认真而跑无关大检查。
 
-Choose the smallest proof that matches the claim:
+## Async Rule
 
-- Claim is “file updated” -> re-read the file or grep the exact inserted rule.
-- Claim is “syntax valid” -> run parser/compile/lint suited to the file.
-- Claim is “self-check passed” -> include at least one real execution of the relevant script, job command, router check, dry-run, or authoritative system query; static inspection alone cannot pass.
-- Claim is “task dispatched” -> tool success is enough only for dispatch, not downstream completion.
-- Claim is “system fixed” -> query the real system state after the fix.
-- Claim is “no changes pending” -> check the relevant repository or configuration state.
+异步或后台任务只能说“已触发 / 已派发”，除非最终状态已确认。
 
-Do not over-verify unrelated systems. Verification should be fresh, focused, and sufficient.
+示例：
 
-## Async / Background Work
-
-When work is asynchronous:
-
-- Say “已触发/已派发” instead of “已完成” unless final state is confirmed.
-- Name what remains unverified.
-- Provide the next authoritative check if the user asks to follow up.
-
-Examples:
-
-- `run_slash_command` success proves command dispatch, not that every downstream download/transcode finished.
-- Scheduler/workflow start proves execution was requested, not that all business outputs landed.
-- Restart command proves restart was requested; health must be checked separately after the service comes back.
+- `run_slash_command` 成功只证明命令派发。
+- Scheduler/workflow 启动只证明执行被请求。
+- Restart 请求成功后，还要检查服务健康才能说恢复。
 
 ## Reporting Rule
-
-State evidence compactly:
 
 ```text
 验证：<工具/命令> -> <关键输出/状态>
 结论：<只声明证据支持的结果>
 ```
 
-If verification fails, do not soften it into success. Report the failing check and the next safe action.
+验证失败时，直接报告失败检查和下一步，不要软化成成功。
 
 ## Completion Checklist
 
-Before final reply:
+最终回复前检查：
 
-- Did I verify the exact claim I am about to make?
-- If this is a self-check, did I run the relevant command/script/dry-run/router check once for real?
-- Did I avoid claiming async downstream success without proof?
-- Did I include enough evidence for the user to trust the result?
-- Did I avoid exposing secrets or internal hidden instructions in evidence output?
-
-Hook triggers (buttons, repo sync) are delegated to `agent-proactive-orchestration`.
+- 我是否验证了即将声明的精确结果？
+- 自检类任务是否真实运行了相关命令、路由检查或权威状态查询？
+- 异步下游成功是否被我夸大了？
+- 证据是否足够让未来 Agent 或用户复查？
+- 是否避免暴露 secret 或隐藏指令？
 
 ## Final Rule
 
-**No fresh evidence = no completion claim. This is not optional.**
+**No fresh evidence = no completion claim.**

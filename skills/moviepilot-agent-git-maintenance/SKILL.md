@@ -1,6 +1,6 @@
 ---
 name: moviepilot-agent-git-maintenance
-version: 6
+version: 7
 description: >-
   Use this skill when maintaining the moviepilot-agent Git repository, syncing
   Agent capability assets, prompting for repository sync after /config/agent
@@ -14,7 +14,7 @@ allowed-tools: read_file list_directory execute_command edit_file write_file ask
 
 ## Purpose
 
-Maintain `/config/agent/repo/moviepilot-agent` as the handoff-safe capability-asset repository for this Agent. This skill owns sync, sensitive scans, commit/push, SSH/Deploy Key troubleshooting, and final repository verification.
+Maintain `/config/agent/repo/moviepilot-agent` as the handoff-safe capability-asset repository for this Agent. This skill owns repository sync, sensitive scans, commit/push, SSH/Deploy Key troubleshooting, tracked cleanup, and final handoff evidence.
 
 Do not use it for media search, downloads, subscriptions, or ordinary MoviePilot operations.
 
@@ -24,15 +24,6 @@ Do not use it for media search, downloads, subscriptions, or ordinary MoviePilot
 - `moviepilot-agent-weekly-sync` Job: recurring automatic sync.
 - `create-moviepilot-skill` / `writing-skills`: authoring skill content before repository sync.
 - `tg-button-interaction`: button UX for sync/push choices.
-
-## Hard Rules
-
-- Never commit runtime secrets, tokens, cookies, passwords, private keys, logs, caches, activity data, databases, or transient archives.
-- Never echo private key contents. Public key and public fingerprint are safe.
-- Fetch before push. Do not force-push remote divergence.
-- `ssh -T` or `git fetch` proves authentication/read access only; push can still fail if the Deploy Key is read-only.
-- If deleting tracked content, remove both tracked files and future reintroduction paths in sync scripts/jobs/docs.
-- `git status` alone is not completion evidence.
 
 ## Canonical Paths
 
@@ -45,7 +36,16 @@ weekly job:  /config/agent/jobs/moviepilot-agent-weekly-sync/JOB.md
 sync script: /config/agent/scripts/sync_moviepilot_agent_repo.py
 ```
 
-Keep repository-specific non-secret anchors, such as local path, host alias and public-key fingerprint, in `REPO_SSH_MAP.md`, not memory.
+Repository-specific non-secret anchors, such as local path, host alias and public-key fingerprint, belong in `REPO_SSH_MAP.md`, not memory.
+
+## Hard Rules
+
+- Never commit runtime secrets, tokens, cookies, passwords, private keys, logs, caches, activity data, databases, or transient archives.
+- Never echo private key contents. Public key and public fingerprint are safe.
+- Fetch before push. Do not force-push remote divergence.
+- `ssh -T` or `git fetch` proves authentication/read access only; push can still fail if the Deploy Key is read-only.
+- If deleting tracked content, remove both tracked files and future reintroduction paths in sync scripts/jobs/docs.
+- `git status` alone is not completion evidence.
 
 ## Trigger Cases
 
@@ -63,137 +63,77 @@ After reusable `/config/agent` capability assets change, offer repository sync u
 ## Standard Sync Workflow
 
 1. **Locate and inspect**
-   ```bash
-   cd /config/agent/repo/moviepilot-agent
-   pwd
-   git status --short --branch
-   git remote -v
-   git branch -vv
-   ```
-   If missing, locate read-only:
-   ```bash
-   find /config -maxdepth 4 -type d -name .git 2>/dev/null | sed 's#/.git$##' | sort
-   ```
-
+   - Confirm repo path, branch, remote and working tree.
+   - If the canonical repo is missing, locate `.git` directories read-only.
 2. **Fetch and detect divergence**
-   ```bash
-   GIT_SSH_COMMAND='ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -o StrictHostKeyChecking=accept-new' git fetch origin main
-   git rev-list --left-right --count main...origin/main
-   ```
-   Interpret: `0 0` synced, `0 N` remote ahead, `N 0` local ahead, `N M` diverged. If remote is ahead, use `git pull --rebase --autostash origin main` and then re-check.
-
+   - Fetch `origin main` through the configured SSH alias.
+   - Interpret `git rev-list --left-right --count main...origin/main` before pushing.
+   - If remote is ahead, prefer `pull --rebase --autostash`, then re-check.
 3. **Sync Agent assets**
-   Prefer the deterministic script:
-   ```bash
-   /opt/venv/bin/python /config/agent/scripts/sync_moviepilot_agent_repo.py
-   ```
-   Expected outcomes include `OK no_changes`, `OK no_staged_changes`, or `OK committed_and_pushed ...`.
-
-   Manual sync must include only approved assets: `skills/`, `runtime/personas/`, `memory/`, `jobs/`, `scripts/`; exclude `docs/`, runtime secrets, logs, caches, activity, and databases.
-
+   - Prefer `/opt/venv/bin/python /config/agent/scripts/sync_moviepilot_agent_repo.py`.
+   - Manual sync may include only approved assets: `skills/`, `runtime/personas/`, `memory/`, `jobs/`, `scripts/`, README and repo metadata.
+   - Exclude docs unless explicitly intended, runtime secrets, logs, caches, activity, and databases.
 4. **Sensitive and runtime pollution scan**
-   ```bash
-   git status --short --ignored
-   find . -path './.git' -prune -o -type f \
-     \( -name '*.log' -o -name '*.tmp' -o -name '*.bak' -o -name '*~' -o -name '.DS_Store' -o -name '*.pyc' \
-        -o -iname '*token*' -o -iname '*secret*' -o -iname '*cookie*' -o -iname '*password*' -o -iname '*credential*' \) \
-     -print | sort
-   ```
-   Remove only exact generated files/directories after confirming they are safe.
-
+   - Check ignored/untracked generated files, logs, pyc, temp files and secret-like names.
+   - Remove only exact generated files/directories after confirming they are safe.
 5. **Validate before commit**
-   ```bash
-   PYTHONDONTWRITEBYTECODE=1 python3 -m py_compile scripts/*.py
-   PYTHONDONTWRITEBYTECODE=1 /opt/venv/bin/python scripts/agent_self_audit.py
-   ```
-   Completion requires the audit summary to show `fail=0`.
-
+   - Compile repo scripts when relevant.
+   - Run the repository self-audit; completion requires `fail=0`.
 6. **Stage, commit, push**
-   ```bash
-   git add README.md jobs scripts skills memory .gitignore
-   git status --short --branch
-   git diff --cached --stat
-   git commit -m "chore: describe exact maintenance change"
-   GIT_SSH_COMMAND='ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -o StrictHostKeyChecking=accept-new' git push origin main
-   ```
-   If Git identity is `root <root@...>`, treat it as hygiene unless the user asked to fix authorship.
-
+   - Stage only approved capability assets.
+   - Commit with an exact maintenance message.
+   - Push through the configured SSH alias; if write access fails, keep the local commit and report the Deploy Key blocker.
 7. **Final handoff verification**
-   ```bash
-   GIT_SSH_COMMAND='ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -o StrictHostKeyChecking=accept-new' git fetch origin main --quiet
-   git status --short --branch
-   git rev-list --left-right --count main...origin/main
-   git status --short --ignored
-   PYTHONDONTWRITEBYTECODE=1 /opt/venv/bin/python scripts/agent_self_audit.py | tail -n 20
-   git log --oneline --max-count=5
-   ```
-   Claim synced only when status is clean, divergence is `0 0`, sensitive scan is clean or explained, and audit ends with `fail=0`.
+   - Fetch again, confirm clean status, divergence `0 0`, sensitive scan clean or explained, audit `fail=0`, and report recent commit hash.
+
+Detailed commands for each step are in `REFERENCES.md`.
 
 ## SSH / Deploy Key Troubleshooting
 
-When push/fetch fails, inspect before asking for new credentials. A `Permission denied (publickey)` may mean the remote is not using the dedicated alias, not that the key is absent.
+When push/fetch fails, inspect before asking for new credentials. `Permission denied (publickey)` often means the remote is not using the dedicated alias, not that the key is absent.
 
 Inspection order:
 
-```bash
-git remote -v
-git status --short
-git branch -vv
-find /config/agent/runtime/git /root/.ssh /home -maxdepth 2 -type f 2>/dev/null
-ssh-keygen -lf /config/agent/runtime/git/<repo-key>.pub
-ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -T git@<host-alias>
-GIT_SSH_COMMAND='ssh -F /config/agent/runtime/git/ssh_config -o BatchMode=yes -o StrictHostKeyChecking=accept-new' git fetch origin main
-```
+1. Remote URL, status, branch tracking.
+2. Runtime git directory and public key fingerprint.
+3. SSH auth using `/config/agent/runtime/git/ssh_config`.
+4. `git fetch origin main` through `GIT_SSH_COMMAND`.
 
-Alias rule: repositories with dedicated SSH aliases should use remotes like:
+Dedicated-alias remotes should look like:
 
 ```text
 git@<host-alias>:OWNER/REPO.git
 ```
 
-Deploy Key write failure usually looks like:
+Deploy Key write failure usually looks like `Permission to OWNER/REPO.git denied to deploy key`. In that case, keep the local commit and ask the user to enable write access or add a writable Deploy Key; do not redo work.
 
-```text
-ERROR: Permission to OWNER/REPO.git denied to deploy key
-```
-
-In that case, keep the local commit and ask the user to enable write access or add a writable Deploy Key; do not redo work.
-
-## First-Time GitHub Access Setup
-
-Use only when the repository is not yet connected or the user asks to initialize access.
-
-1. Confirm owner/repo, local path, host alias, and whether the key needs write access.
-2. Generate runtime key; never store it in repo or memory:
-   ```bash
-   mkdir -p /config/agent/runtime/git
-   chmod 700 /config/agent/runtime/git
-   ssh-keygen -t ed25519 -C moviepilot-agent-runtime -f /config/agent/runtime/git/moviepilot-agent_ed25519 -N ''
-   chmod 600 /config/agent/runtime/git/moviepilot-agent_ed25519
-   chmod 644 /config/agent/runtime/git/moviepilot-agent_ed25519.pub
-   ssh-keygen -lf /config/agent/runtime/git/moviepilot-agent_ed25519.pub
-   cat /config/agent/runtime/git/moviepilot-agent_ed25519.pub
-   ```
-3. Write `/config/agent/runtime/git/ssh_config` with a dedicated host alias:
-   ```text
-   Host github.com-moviepilot-agent
-     HostName github.com
-     User git
-     IdentityFile /config/agent/runtime/git/moviepilot-agent_ed25519
-     IdentitiesOnly yes
-   ```
-4. Ask the user to add the public key as a GitHub Deploy Key. For push, GitHub must enable write access.
-5. Verify auth, then clone or set the remote to `git@github.com-moviepilot-agent:clone-fan/moviepilot-agent.git`.
+First-time setup command templates are in `REFERENCES.md`.
 
 ## Tracked Directory Removal Checklist
 
 For intentional repository cleanup:
 
-- Confirm the directory is tracked: `git ls-files | rg '(^|/)DIR(/|$)'`.
+- Confirm the directory is tracked.
 - Remove tracked files with Git, not broad filesystem deletes.
 - Check sync scripts, jobs, README, and `.gitignore` for reintroduction paths.
 - Validate no tracked files remain and no sync command re-adds them.
 - Run the standard sensitive scan, audit, commit, push, and final verification.
+## Git Failure Triage
+
+For failed sync, push, or CI-like repository maintenance checks, localize before changing credentials or history:
+
+1. Identify the failing layer: working tree, sync script, sensitive scan, audit, commit, fetch, push auth, remote divergence, or branch protection.
+2. Read the exact failing command and exit code; keep the smallest reproducible command.
+3. Prefer non-destructive fixes: rerun sync, fix ignored generated files, pull/rebase, repair remote alias, or leave a local commit with a clear blocker.
+4. Do not force-push, rewrite history, rotate keys, or delete tracked assets unless explicitly authorized.
+## Plugin Release Handoff
+
+When Agent capability work includes a local plugin repository or release asset, keep Git handoff explicit:
+
+- distinguish Agent capability repo sync from plugin source repo sync; do not mix commits unless the user asked for both;
+- before pushing plugin-related changes, check package metadata, generated ZIP/release artifacts, README/config notes, and secret/runtime exclusions;
+- after push, report branch, commit, remote state, and whether the plugin still needs install/reload validation inside MoviePilot;
+- if Deploy Key or remote write permission blocks push, keep local changes and report the exact repository blocker.
 
 ## Output Contract
 

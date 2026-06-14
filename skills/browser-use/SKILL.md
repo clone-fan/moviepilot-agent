@@ -102,6 +102,19 @@ Open the page, capture text or screenshot depending on the user's evidence need,
 - Never print passwords, tokens, cookies, 2FA secrets, or full session headers.
 - Prefer official sources for facts that affect user decisions.
 
+## Documentation Lookup Boundary
+
+Use browser/web lookup for documentation only when local MoviePilot tools, skill files, or known docs cannot answer the question. Prefer official docs and current source pages. Summarize only the relevant contract, endpoint, selector, or visible state; do not import whole documents into Agent memory.
+
+## Visual Evidence Mode
+
+Use screenshots or browser inspection as proof only when visible state matters: plugin pages, dashboards, rendered errors, layout regressions, buttons, dialogs, or theme issues.
+
+- Capture before/after or final visible state when it materially helps review.
+- Pair screenshots with text evidence: URL/page title, visible label, selector, or MoviePilot capability/config query.
+- Do not make browser screenshots the default for backend, media, subscription, or transfer tasks.
+- Treat screenshots as evidence of UI state, not proof that backend execution succeeded unless paired with a backend status query.
+
 ## Output Contract
 
 Report:

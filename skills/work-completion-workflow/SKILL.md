@@ -73,6 +73,28 @@ compatibility: "适用于需要整理收尾的工作；不替代 verification-be
 
 验证纪律由 `verification-before-completion` 统一管理；Hook 触发由 `agent-proactive-orchestration` 统一路由。
 
+## Report And Documentation Distillation
+
+When absorbing documentation/report candidates, keep reports operational:
+
+- summary first, then evidence, changed files, rejected ideas, and next blocker;
+- use tables only when comparison is clearer than prose;
+- diagrams/mermaid are optional and only for real workflow or dependency clarity;
+- generated reports must not hide failed checks or broaden claims beyond evidence;
+- long reference material belongs in `docs/archive/` or `runtime/`, not memory.
+
+## Plugin Delivery Report
+
+For local plugin or MP Ops Assistant work, final reports should separate:
+
+- **implemented**: source/config/UI/command/API/workflow surfaces changed;
+- **registered**: plugin reload/install, commands, services, routes, or capabilities visible;
+- **verified**: exact command/tool output proving behavior or registration;
+- **not claimed**: preview-only, linkage-only, not reloaded, not packaged, or not pushed;
+- **handoff**: whether Agent repo sync, plugin repo sync, release ZIP, or MoviePilot install/reload remains.
+
+This prevents release-note style summaries from overstating plugin completeness.
+
 ## Distilled Rules
 
 ### Closure Patterns

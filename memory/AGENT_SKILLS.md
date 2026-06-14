@@ -31,6 +31,9 @@ last_updated: 2026-06-09
 ## moviepilot skill overlap arbitration
 技能重叠时按 direct routes → resource-search → moviepilot-cli → moviepilot-api → command-dispatch → 专项技能的顺序仲裁；安全确认与用户明确指令优先。
 
+## UI / 设计技能
+- MoviePilot 专用 UI 能力器官：插件设置页、Dashboard、操作工作流、Vuetify JSON 表单、Vue 插件页、MP 运维助手、115 STRM 等成熟插件参考、外部 UI 知识蒸馏、图标/动效/状态反馈/安全交互 → `moviepilot-ui-design`。触发后要按 MoviePilot 场景选择专类模式并落实改进，不把用户措辞当成果。
+
 ## 流程技能
 - 交互按钮门禁：`tg-button-interaction`
 - 继续/落地/接管/授权边界/避免过度确认：`agent-executive-control`
@@ -55,6 +58,7 @@ last_updated: 2026-06-09
 ## 蒸馏规则
 - 特定任务的稳定流程、排障顺序、检查清单、命令模板应优先进对应 skill，不留在 memory。
 - 非敏感运行锚点如仓库名、本地路径、Host 别名、公钥指纹应优先放 runtime，并由相关 skill 引用。
+- 大型外部技能库吸收必须先过 `skill-architecture-governance` 的准入门：只把候选视为 capability slice，先判定来源、owner、去重、边界、生命周期和证据；禁止整包导入、禁止创建第二 orchestrator、禁止绕过 MoviePilot Agent 既有路由。
 
 ## 维护使命
 `moviepilot-agent` 是 Agent 能力资产管理仓库；维护目标是可迁移、可审计、可恢复、可持续演进，不是普通源码项目。

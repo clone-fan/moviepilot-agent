@@ -1,6 +1,6 @@
 ---
 name: agent-proactive-orchestration
-version: 4
+version: 5
 description: >-
   Use this skill for whole-Agent proactive orchestration before acting or
   replying: run the tg-button-interaction gate first, classify user intent,
@@ -14,12 +14,9 @@ allowed-tools: ask_user_choice
 
 ## Purpose
 
-Prevent mechanical, step-by-step behavior. The Agent should reason before
-acting, close the current task autonomously when safe, and surface choices only
-when user choice genuinely changes the next action.
+Provide the Agent's governed runtime rhythm for MoviePilot work. A long skill list is not enough: the Agent must know when to inspect, when to plan, when to call a domain skill, when to ask, and when to prove the work is ready.
 
-This skill decides interaction mode and completion hooks, then delegates domain
-work to the right specialized skill.
+This skill decides interaction mode, domain routing, bounded execution, verification, and cleanup hooks. It prevents the user from becoming the full-time dispatcher.
 
 ## Mandatory Button Gate
 
@@ -33,9 +30,24 @@ Before every user-facing reply, apply `tg-button-interaction`:
 - If the user reports buttons are broken, typed fallback is only temporary;
   route the failure to debugging and restore real callback-based interaction.
 
+## Runtime Rhythm
+
+Use this governed runtime rhythm before ordinary execution. It is the MoviePilot Agent adaptation of the Vibe-style harness, but MoviePilot domain routing and safety remain the authority:
+
+1. **Skeleton check** — identify whether this is direct media work, Agent/config asset work, plugin work, diagnosis, or a high-impact operation. Reject unsafe branches early.
+2. **Freeze intent** — reduce the user request to goal, target, constraints, risk, and success evidence. Do not copy emotional filler into memory.
+3. **Interview only if needed** — ask one focused question only when required input is missing; use buttons for bounded choices. Do not interview when the next safe action is obvious.
+4. **Stage plan** — for multi-step work, create or use a compact staged plan with acceptance evidence per stage; for clear low-risk continuation, execute directly. For Agent self-refactor campaigns, prefer the existing `runtime/self-refactor-campaign.md` state over creating a new plan.
+5. **Route specialist skill** — choose one primary domain skill or direct MoviePilot tool path; support skills may advise planning, debugging, verification, or governance but never become a second runtime authority.
+6. **Execute bounded work** — act inside the current authorized scope; gather only context that affects the next action.
+7. **Verify evidence** — prove the changed state with tools, commands, or fresh status checks before completion claims.
+8. **Cleanup and preserve context** — keep only reusable rules in skills/memory/runtime; archive historical material in docs; discard one-off process noise.
+
+Internal size labels such as quick/small/XL are planning aids only. They must not create user-facing ceremony or bypass requirement freeze, review, cleanup, and no-regression discipline.
+
 ## Pre-Action Router
 
-After the button gate, classify the request:
+After the runtime rhythm and button gate, classify the request:
 
 1. **Direct execution** — Exact, low-risk instruction; no meaningful branch.
    Execute the smallest correct action and validate.
@@ -53,16 +65,40 @@ After the button gate, classify the request:
 Do not ask for a typed routine confirmation when this router can choose a mode
 now or hand the bounded choice to buttons.
 
+## Spec And Plan Distillation
+
+When absorbing planning/spec candidates such as `create-plan`, `context-fundamentals`, `speckit-*`, and Vibe planning wrappers, keep one MoviePilot Agent runtime:
+
+- **Intent spec**: freeze user goal, non-goals, target assets/media/plugin, risk, and acceptance evidence before broad work.
+- **Clarification budget**: ask only for missing inputs that block safe execution; do not create a second interview ritual.
+- **Plan contract**: plans should name owner files/tools, ordered phases, proof floors, and confirmation gates.
+- **Task slicing**: split work by owner and verification boundary, not by arbitrary role labels.
+- **Constitution boundary**: project rules and safety boundaries are constraints, not a separate route authority.
+
+Rejected from upstream candidates: second plan runtime, standalone spec engine, auto task-to-issue workflow, and external command wrappers.
+
+## Autonomous Batch Selection
+
+When the user authorizes self-improvement broadly, choose the next batch by this order:
+
+1. Directly improves current user collaboration: fewer needless prompts, clearer ownership, stronger verification, safer plugin/media operations.
+2. Has an existing local owner and can be absorbed in a small checklist update.
+3. Avoids duplicate routes, second runtimes, external dependencies, and memory expansion.
+4. Can be verified by structural checks plus one discoverability assertion.
+
+Default to `update existing skill` or `runtime admission`. Create no new skill unless the trigger, tools, and proof boundary are genuinely distinct.
+
 ## Task Closure Loop
 
 For actionable tasks:
 
-1. Resolve intent and the applicable specialized skill.
+1. Resolve frozen intent and primary skill/tool route.
 2. Gather only state that affects the action.
 3. Execute the smallest correct action when authorized.
 4. Validate with fresh evidence.
-5. Summarize result and blocker, if any.
-6. Trigger completion hooks.
+5. Preserve only reusable context and discard dirty one-off wording.
+6. Summarize result and blocker, if any.
+7. Trigger completion hooks.
 
 Stop only when complete, blocked by missing input, blocked by safety
 confirmation, or handed off to an asynchronous system route by design.
@@ -80,6 +116,7 @@ confirmation, or handed off to an asynchronous system route by design.
 
 ## Anti-Mechanical Rules
 
+- Do not use self-negating statements as capability, such as “not a phrase list” or “not an apology”; replace them with positive execution contracts.
 - Do not use apology as the fix; change the responsible rule and verify.
 - Do not create endless “next step” prompts. If safe and clear, continue.
 - Do not over-buttonize exact low-risk instructions.
@@ -87,6 +124,8 @@ confirmation, or handed off to an asynchronous system route by design.
 - Do not button-loop when buttons are broken; use typed continuity and diagnose.
 - Do not split completion into multiple approvals when the user already asked to
   self-check, organize, or archive.
+- Do not restart an Agent self-refactor campaign from activity history when a
+  runtime campaign state exists; continue the next unprocessed capability target.
 
 ## Delegation Rule
 

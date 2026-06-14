@@ -1,5 +1,5 @@
 ---
-version: 2
+version: 3
 name: chinese-git-workflow
 description: 国内 Git 平台配置参考——Gitee、Coding.net、极狐 GitLab、CNB 的 SSH/HTTPS/凭据/CI 接入差异与镜像同步配置。仅在用户显式 /chinese-git-workflow 时调用，不要根据上下文自动触发。
 ---
@@ -8,7 +8,7 @@ description: 国内 Git 平台配置参考——Gitee、Coding.net、极狐 GitL
 
 ## Trigger Boundary
 
-这是显式触发型参考技能。仅当用户明确点名 `/chinese-git-workflow`，或明确要求国内 Git 平台工作流、Gitee/Coding/极狐 GitLab/CNB 配置对比、中文团队 Git 流程规范时使用。
+这是显式触发型参考技能。仅当用户明确点名 `/chinese-git-workflow`，或明确要求国内 Git 平台工作流、Gitee / Coding.net / 极狐 GitLab / CNB 配置对比、中文团队 Git 流程规范时使用。
 
 不要让本技能抢占 MoviePilot 媒体、站点、下载、订阅、转移、Agent Git 维护或系统排障路线。
 
@@ -20,60 +20,17 @@ description: 国内 Git 平台配置参考——Gitee、Coding.net、极狐 GitL
 
 | 平台 | 适合场景 | 仓库地址/认证要点 | CI/CD |
 |---|---|---|---|
-| Gitee | 开源、小团队、国内访问优先 | HTTPS/SSH 均可；常用于 GitHub 镜像 | Gitee Go |
+| Gitee | 开源、小团队、国内访问优先 | HTTPS / SSH 均可；常用于 GitHub 镜像 | Gitee Go |
 | Coding.net | 中大型团队、腾讯云生态 | `https://e.coding.net/<team>/<project>/<repo>.git` 或 SSH | Coding CI / Jenkinsfile |
 | 极狐 GitLab | 企业私有化、GitLab 生态 | `https://jihulab.com/<group>/<repo>.git` 或企业内网域名 | GitLab CI |
 | CNB | 云原生、Docker 流水线 | 仅 HTTPS；用户名常用 `cnb`，密码为 Access Token | `.cnb.yml` |
 | GitHub | 国际协作、开源生态 | 国内访问可能不稳定；可做上游或镜像 | GitHub Actions |
 
-## 远程与凭据配置要点
-
-### Gitee
-
-```bash
-git remote add origin https://gitee.com/<org>/<repo>.git
-# SSH 推荐单独 Host 与 key
-# Host gitee.com
-#   HostName gitee.com
-#   User git
-#   IdentityFile ~/.ssh/gitee_ed25519
-```
-
-双向镜像推送时，显式检查 push URL，避免误推：
-
-```bash
-git remote set-url --add --push origin https://gitee.com/<org>/<repo>.git
-git remote set-url --add --push origin https://github.com/<org>/<repo>.git
-git remote -v
-```
-
-### Coding.net
-
-```bash
-git remote add origin https://e.coding.net/<team>/<project>/<repo>.git
-git remote add origin git@e.coding.net:<team>/<project>/<repo>.git
-```
-
-### 极狐 GitLab
-
-```bash
-git remote add origin https://jihulab.com/<group>/<repo>.git
-# 企业私有化：
-# git remote add origin https://gitlab.yourcompany.com/<group>/<repo>.git
-```
-
-### CNB
-
-```bash
-git remote add origin https://cnb.cool/<org>/<repo>.git
-# HTTPS 认证：用户名 cnb，密码使用个人 Access Token。
-```
-
-不要把 Token 写进仓库、文档、日志或长期记忆。
+详细远程地址、SSH Host、镜像推送、CI/CD 映射和 PR/MR 模板见同目录 `REFERENCES.md`。
 
 ## 分支模型选择
 
-### 1. 主干开发
+### 主干开发
 
 适合 2-8 人、小步快跑、自动化测试可靠的团队。
 
@@ -81,7 +38,7 @@ git remote add origin https://cnb.cool/<org>/<repo>.git
 - 短命功能分支 1-2 天内合回。
 - 未完成功能用 Feature Flag 隔离。
 
-### 2. Git Flow
+### Git Flow
 
 适合固定版本节奏、多版本维护、中大型团队。
 
@@ -91,7 +48,7 @@ git remote add origin https://cnb.cool/<org>/<repo>.git
 - `release/*`：发布稳定。
 - `hotfix/*`：线上紧急修复，同时回合主线。
 
-### 3. 国内常用简化流
+### 国内常用简化流
 
 适合多数中小团队。
 
@@ -147,58 +104,19 @@ feat(购物车): 支持批量删除商品
 
 避免：`update code`、`fix bug`、`修改了一些东西`、没有上下文的 `fix: 修复问题`。
 
-## CI/CD 映射
+## 通用安全原则
 
-| 能力 | Gitee Go | Coding CI | 极狐 GitLab CI | CNB |
-|---|---|---|---|---|
-| 触发 | `triggers` | Jenkinsfile/平台配置 | `only` / `rules` | `push` / `pull_request` |
-| 运行环境 | 平台 step | Jenkins agent | `image` | 每条流水线指定 Docker image |
-| 缓存/制品 | cache/artifacts | stash/制品库 | cache/artifacts | 参考官方配置 |
-| 变量/密钥 | 环境变量配置 | 凭据管理 | CI/CD Variables | Access Token/环境变量 |
-| 生产发布 | 手动/规则 | 手动阶段 | `when: manual` | 页面或配置触发 |
-
-通用原则：测试先于构建，构建先于部署；生产发布最好手动确认；密钥只进平台密钥管理，不进仓库。
-
-## PR/MR 模板要点
-
-模板应至少包含：
-
-```markdown
-## 变更说明
-## 变更类型
-- [ ] feat
-- [ ] fix
-- [ ] refactor
-- [ ] docs
-## 关联需求/Bug
-## 影响范围
-## 测试方法与结果
-## 部署注意事项
-## 截图/录屏（如涉及 UI）
-```
-
-常见位置：
-
-- Gitee：`.gitee/PULL_REQUEST_TEMPLATE.md`
-- GitLab/Coding：`.gitlab/merge_request_templates/default.md`
-
-## 常用本地配置
-
-```bash
-git config --global core.quotepath false
-git config --global init.defaultBranch main
-git config --global pull.rebase false
-# 如需 GitHub 代理，按实际环境单独配置，不写入项目仓库。
-```
-
-`.gitignore` 至少排除：IDE 目录、依赖目录、构建产物、`.env*`、系统文件、临时文件。
+- Token、密码、私钥、Cookie、`.env` 只进平台密钥管理，不进仓库、文档、日志或长期记忆。
+- 双向镜像推送前显式检查 `git remote -v` 和 push URL，避免误推。
+- 生产发布最好手动确认，并保留回滚方案。
+- 测试先于构建，构建先于部署。
 
 ## Pre-Push Checklist
 
 - 分支命名符合团队规则。
 - commit message 类型、范围、描述清楚。
-- 已关联需求/Bug 编号。
-- PR/MR 描述完整。
+- 已关联需求 / Bug 编号。
+- PR / MR 描述完整。
 - CI 通过或失败原因明确。
 - 涉及发布时有回滚方案。
 - 无 Token、密码、私钥、Cookie、`.env` 泄露。

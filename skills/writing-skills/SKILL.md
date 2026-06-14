@@ -58,6 +58,20 @@ Edit an existing skill when:
 
 Do not create skills for one-off task history. Put history in docs/archive, deterministic routines in scripts, schedules in jobs, and high-frequency global rules in memory.
 
+## Safe File Writing Discipline
+
+When writing or editing Agent skills, plugin docs, or capability files:
+
+- preview the target owner and file path before mutation;
+- edit the smallest stable block instead of rewriting unrelated sections;
+- preserve frontmatter, name-directory matching, tool declarations, and trigger wording;
+- avoid creating duplicate skills when an existing owner can absorb the rule;
+- keep long external examples out of `SKILL.md`; use runtime notes or docs/archive for references;
+- verify by re-reading changed files and asserting the new trigger/rule is discoverable.
+
+For multi-file edits, use `executing-plans` requirement freeze and phase cleanup before claiming completion.
+
+
 ## Authoring Workflow
 
 1. **Choose the owner**
@@ -87,6 +101,28 @@ Skills must respect:
 - completion evidence from `verification-before-completion`.
 
 Avoid stale platform assumptions such as unavailable task-list tools, external skill loaders, or non-MoviePilot command names unless the skill is explicitly about that external environment.
+
+## Skill Documentation Quality
+
+Skill documentation should be usable at routing time:
+
+- trigger phrases in `description` must match real user tasks;
+- body should separate purpose, workflow, safety, verification, and output contract;
+- examples are optional and should not dominate the always-read file;
+- if a concept is only a reference or catalog note, keep it in `runtime/` or `docs/archive/`;
+- update admission notes when an external candidate is absorbed.
+
+## Minimal Capability Documentation
+
+When a skill or local plugin change adds a user-facing capability, ensure there is a compact maintainable description of:
+
+- trigger or entry point: user phrase, slash command, button, workflow action, scheduler, or API route;
+- required config and safe defaults;
+- read-only preview vs state-changing execution;
+- confirmation gate and rollback/record location for risky actions;
+- verification command or MoviePilot query that proves the capability is registered and working.
+
+Do not create long docs for tiny internal edits; the goal is handoff safety, not paperwork.
 
 ## Minimal Validation
 

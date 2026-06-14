@@ -84,6 +84,13 @@ If multiple numeric distractors remain, strengthen anchors or use metadata bindi
 - Save the full merged list only through `update_custom_identifiers`.
 - Verify with `recognize_media` on the original sample.
 - For risky offsets, test at least one adjacent episode or likely collision pattern when available.
+## Acquisition Chain Guard
+
+For anime/TV releases, do not let resource pressure force unsafe global identifiers:
+
+- confirm season/episode mapping before subscription or transfer retry uses the rule;
+- if TMDB episode grouping is uncertain, pause identifier saving and continue with explicit media identity only when possible;
+- after a rule is verified, re-run the original recognition/search/transfer step once instead of restarting the full media workflow.
 
 ## Output Requirements
 

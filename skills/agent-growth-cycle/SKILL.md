@@ -26,28 +26,42 @@ Do not use it for a one-off task with no reusable lesson.
 1. **Observe**
    - Identify the concrete signal: user correction, repeated failure, successful pattern, or missing capability.
    - Separate fact from emotion and transient context.
+   - Check context pressure: is the proposed lesson worth being loaded, routed, or retained?
 
 2. **Classify**
    - Memory: only high-frequency global boundary or preference.
    - Skill: reusable workflow, checklist, routing discipline, or domain method.
    - Script: deterministic repeated action.
    - Job: scheduled or recurring task.
-   - Runtime: non-sensitive local anchor or current-state mapping.
-   - Docs/archive: historical explanation or non-runtime record.
+   - Runtime: non-sensitive local anchor, active workstream state, candidate inventory, or current-state mapping.
+   - Docs/archive: historical explanation, long reference, external corpus notes, or non-runtime record.
 
 3. **Distill**
    - Keep the rule operational and short.
-   - Remove blame, noise, and one-time details.
+   - Remove blame, noise, stale evidence, and one-time details.
    - Prefer improving an existing asset over creating a duplicate.
+   - If evidence is ambiguous or low-value, keep the item in shadow/runtime/docs rather than promoting it to memory or routing.
 
 4. **Apply**
    - Make the smallest file change needed.
    - Avoid bloating memory with low-frequency process details.
+   - Preserve single control plane: growth notes may advise, but cannot become a second router, second truth source, or automatic promotion engine.
 
 5. **Verify**
    - Re-read changed files or run minimal assertions.
    - Check that the new rule is discoverable by the routing layer.
+   - Check owner-boundary preservation and fallback: if quality evidence is stale, duplicate, or unsafe, the safe state is no write / shadow / archive.
    - Do not claim growth unless there is evidence.
+## Promotion Thresholds
+
+Promote a lesson only when at least one is true:
+
+- it prevents a repeated failure the user has actually experienced, such as over-confirming, not executing, wrong owner, or weak verification;
+- it strengthens a high-frequency MoviePilot/Agent workflow: media chain, local plugin work, repository sync, UI verification, or safety boundary;
+- it reduces future context load by replacing repeated investigation with a small owner rule;
+- it gives a clear proof floor for a claim the Agent often needs to make.
+
+Reject or shadow candidates that add general cleverness but no MoviePilot owner, no trigger, or no verification path.
 
 ## Anti-Patterns
 

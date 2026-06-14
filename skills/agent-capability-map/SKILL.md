@@ -40,15 +40,18 @@ Provide a compact body map for Agent assets so durable knowledge lands in the ri
 
 ## Placement Decision Tree
 
-1. Must it be loaded every session? -> `memory/`
-2. Is it a reusable procedure, checklist, or routing discipline? -> `skills/`
-3. Is it deterministic executable logic? -> `scripts/`
-4. Is it scheduled or deferred? -> `jobs/`
-5. Is it current non-secret local state or an anchor? -> `runtime/`
-6. Is it historical or long-form reference? -> `docs/archive/`
-7. Is it only speaking style? -> persona definition
-8. Is it local plugin development material under `/config`? -> local plugin library
-9. Is it one-time conversation history? -> no manual asset; activity handles it
+1. Is it an external skill/corpus lesson? -> first run `skill-architecture-governance` harvest gate; do not import raw directories.
+2. Must it be loaded every session? -> `memory/`
+3. Is it a reusable procedure, checklist, or routing discipline? -> `skills/`
+4. Is it deterministic executable logic? -> `scripts/`
+5. Is it scheduled or deferred? -> `jobs/`
+6. Is it current non-secret local state, workstream status, candidate inventory, or an anchor? -> `runtime/`
+7. Is it historical or long-form reference? -> `docs/archive/`
+8. Is it only speaking style? -> persona definition
+9. Is it local plugin development material under `/config`? -> local plugin library
+10. Is it one-time conversation history? -> no manual asset; activity handles it
+
+For large upstream skill packs, prefer: source inventory in `runtime/`, distilled governance in existing `skills/`, and long references in `docs/archive/`. `memory/` is the rarest destination.
 
 ## Verification
 

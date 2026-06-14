@@ -29,6 +29,19 @@ Do not plan-block:
 - simple read-only diagnosis;
 - direct MoviePilot slash commands or media operations covered by narrower skills.
 
+## Spec-First Planning
+
+For complex Agent/plugin/media work, write a mini spec before the steps:
+
+- **Problem**: what concrete friction or missing capability is being solved.
+- **Scope**: exact files, plugin, MoviePilot object, media chain, or config area.
+- **Non-goals**: what will not be changed, imported, deleted, restarted, or downloaded.
+- **Acceptance evidence**: the command/tool/state query that will prove each phase.
+- **Risk gates**: what needs buttons or explicit confirmation.
+
+Use this as a lightweight contract, not a separate documentation project. If the spec grows large, put long notes in `runtime/` or `docs/archive/` and keep the executable plan compact.
+
+
 ## Plan Shape
 
 Keep the plan short and operational:

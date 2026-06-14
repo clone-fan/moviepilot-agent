@@ -32,18 +32,22 @@ Do not use it when:
 ## Dispatch Pattern
 
 1. Split the work into independent scopes.
-2. Give each subagent a complete, narrow instruction:
-   - what to inspect;
-   - what not to change;
-   - what evidence to return;
-   - any relevant IDs, paths, titles, or dates.
+2. Build a handoff envelope for each subagent:
+   - **role / scope**: which specialist perspective and exact area to inspect;
+   - **input contract**: paths, IDs, titles, dates, constraints, and known context;
+   - **expected outputs**: concise findings, evidence refs, risks, and recommended next check;
+   - **done definition**: what counts as enough read-only evidence;
+   - **forbidden actions**: no writes, no downloads, no deletion, no restarts, no credential changes, no user messaging.
 3. Use `subagent_task` with `action=run` for a bounded batch, or `action=start` then `wait` when ongoing coordination is useful.
 4. Read all results privately.
 5. Synthesize only the operational conclusion for the user; do not paste subagent reports verbatim.
+6. If a handoff affects governed assets, keep replay references such as file paths, commands, tool names, or evidence snippets so the main Agent can verify independently.
 
 ## Safety Rules
 
 - Subagents are read-only investigators by default.
+- Main Agent remains the only execution owner and final decision maker.
+- Role packs, hive/squad patterns, or specialist labels are advisory templates only; they must not become a second orchestrator, supervisor hierarchy, route authority, or auto-merge owner.
 - Main Agent must perform all state-changing actions directly under the confirmation policy.
 - Main Agent must ask confirmation for high-impact actions even if a subagent recommends them.
 - If a subagent result conflicts with tool evidence, verify with the authoritative MoviePilot tool or direct file read before acting.

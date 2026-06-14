@@ -49,17 +49,30 @@ Classify each candidate asset into one of five outcomes:
 
 ## Required Self-Audit Inputs
 
-Before writing, gather only relevant evidence:
+Before writing, gather only relevant evidence. For a full-Agent distillation request, run the self-check as an asset-wide program, not as a single local patch:
 
 - recent user correction and activity context;
+- inventory of `memory/`, `skills/`, `runtime/`, `jobs/`, and `scripts/`;
 - skill frontmatter quality and line counts;
 - stale references such as unavailable platform/tool names;
 - missing `allowed-tools` where the workflow uses tools;
 - missing verification or fallback steps;
 - business-critical skills that may be too thin after slimming;
-- duplicate responsibilities across memory and skills.
+- duplicate responsibilities across memory and skills;
+- assets created by the Agent that may be the wrong layer, especially scripts made for a one-off governance check.
 
-Use subagents for independent read-only inspection when helpful, but the main Agent owns all writes and final decisions.
+Use subagents for independent read-only inspection when helpful, but the main Agent owns all writes and final decisions. A failed subagent does not stop the program; continue with direct local inspection.
+
+## Campaign State
+
+For broad self-refactor campaigns, keep a short non-secret runtime note or local processed set with:
+
+- current phase and goal;
+- assets already audited, changed, verified, or intentionally skipped;
+- open capability gaps and their owner skill;
+- latest verification command or evidence.
+
+Use `runtime/` for current campaign anchors, not memory. Never treat activity history alone as the campaign state when deciding what to revisit.
 
 ## Anti-Loop Rules
 
@@ -70,6 +83,9 @@ Use subagents for independent read-only inspection when helpful, but the main Ag
   - a dependent architecture change requires a targeted update.
 - Do not rank by line count alone. Rank by capability impact first, then maintenance cost.
 - Stop slimming a file once it is below the practical threshold and still complete.
+- If the next step is unclear, first read the campaign state and choose the highest-impact unprocessed owner; do not restart global scans.
+- If the user explicitly asks to蒸馏整个 Agent or start the self-check program, broaden from the current owner to the asset-wide inventory, then return to bounded edits.
+- Do not create new scripts as the default expression of self-improvement; first improve routing, skills, memory boundaries, runtime state, and verification behavior. Keep or add scripts only when the check is deterministic, repeatable, and owned by an existing workflow.
 
 ## Safe Change Standard
 

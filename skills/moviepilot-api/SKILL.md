@@ -98,6 +98,14 @@ All endpoints are under the base URL `{MP_HOST}`. Path parameters are shown as `
 - Prefer read-only API calls first. For writes, require the same confirmation level as the equivalent MoviePilot tool action.
 - Validate API mutations by querying the resulting resource, not by HTTP status alone.
 - If an endpoint is uncertain, inspect available routes or use the documented client help before guessing method/path/body.
+## Plugin API Gap Lane
+
+For plugin development or validation, use REST only when dedicated plugin tools or slash/capability queries cannot prove the state:
+
+- prefer `query_installed_plugins`, `query_plugin_config`, `query_plugin_capabilities`, and `reload_plugin` where available;
+- use REST to inspect custom plugin endpoints only after identifying the plugin route and expected response shape;
+- mutating plugin endpoints follow the same confirmation gate as the equivalent button or command;
+- verify a plugin API mutation through plugin config/data/capability state, not HTTP status alone.
 
 ## Distilled API Fallback Rules
 

@@ -1,57 +1,110 @@
 ---
 name: tg-button-interaction
-version: 19
+version: 22
 description: >-
-  MUST-CHECK before every user-facing reply. This is the single source of truth
-  for button-first interaction: confirmations, continue/next-step, authorize,
-  agree/cancel, retry, media/site/season/quality/action selection, command
-  selection, repository/scheduler/workflow decisions, and safe smoke tests must
-  use ask_user_choice whenever the channel can support it. Text fallback is only
-  temporary continuity while diagnosing broken Telegram callbacks; it is never a
-  successful replacement for real buttons.
-allowed-tools: ask_user_choice
+  MUST-CHECK before every user-facing reply. This is the Agent's always-on
+  interaction spine and primary UX weapon: confirmations, continue/next-step,
+  authorize, agree/cancel, retry, media/site/season/quality/action selection,
+  command selection, repository/scheduler/workflow decisions, and safe smoke
+  tests must use ask_user_choice whenever the channel can support it. It should
+  simplify every bounded interaction by choosing good defaults, offering compact
+  action buttons, and preventing the user from typing routine confirmations.
+  Text fallback is only temporary continuity while diagnosing broken Telegram
+  callbacks; it is never a successful replacement for real buttons. For
+  perfection claims, require both a live callback and log-level callback
+  evidence.
+allowed-tools: ask_user_choice execute_command
 ---
 
 # TG Button Interaction
 
 ## Mission
 
-Make the Agent interact through Telegram buttons whenever a bounded user choice
-exists. The user should not need to type “下一步 / 继续 / 授权 / 同意 / 确认” for
-choices that can be represented as buttons.
+Make buttons the Agent's always-on interaction spine, not an occasional confirmation widget.
 
-This skill owns interaction UX routing. Other skills must defer their user
-choices to this skill instead of asking the user to type routine confirmations.
+Whenever the next user interaction can be represented as a small safe choice, this skill should quietly take the lead: reduce the user's burden, provide the right buttons, and let the conversation advance by clicking instead of typing “下一步 / 继续 / 授权 / 同意 / 确认”.
+
+This skill owns bounded interaction UX. Other skills should delegate routine user choices here instead of inventing typed prompts.
+
+## Operating Principle
+
+For every user-facing reply, decide whether buttons can make the next step easier:
+
+- **Follow closely** — stay present at every turn, especially before completion, confirmation, retry, branching, and next-step handoff.
+- **Simplify** — turn routine typed replies into 2-6 clear buttons.
+- **Lead with defaults** — when one safe continuation is obvious, include it as the first button; keep cancel/view-only as safe exits.
+- **Preserve momentum** — do not ask the user to type ritual words; either execute an exact low-risk request or buttonize the remaining choice.
+- **Stay safe** — buttons confirm risky actions, never bypass safety boundaries.
 
 ## Non-Negotiable Rules
 
-1. **Buttons are the target state.** Text fallback is only a temporary repair
-   bridge, not a completed solution.
-2. **Button gate runs before every user-facing reply.** If a bounded choice is
-   needed and the input is safe for buttons, call `ask_user_choice` and stop.
-3. **No typed routine confirmations.** Do not request typed routine confirmations.
-   Use buttons unless the value is secret, long free-form, or the callback chain
-   is known broken.
-4. **`ask_user_choice` is terminal.** Put the full prompt and all options in the
-   tool call, then stop the turn. Do not duplicate the same question in text.
-5. **Buttons never bypass safety.** They carry explicit confirmation for risky
-   actions; they do not remove the confirmation requirement.
+1. **Buttons are the target state.** Text fallback is only temporary repair continuity.
+2. **Button gate runs before every user-facing reply.** If a bounded choice is needed and safe for buttons, call `ask_user_choice` and stop.
+3. **No typed routine confirmations.** Use buttons unless the value is secret, long free-form, or the callback chain is known broken.
+4. **`ask_user_choice` is terminal.** Put the full prompt and options in the tool call, then stop. Do not duplicate the question in text.
+5. **Buttons never bypass safety.** They carry explicit confirmation for risky actions; they do not remove the confirmation requirement.
+6. **Do not overclaim perfection.** A returned button value proves the main chain works; “perfect / fully healthy” also requires fresh log evidence for callback receipt and interaction resolution.
 
-## Button Gate
+## Always-On Button Gate
 
-Before replying, ask:
+Before any final text reply, ask:
 
-1. Does the next step need continue, authorize, agree, confirm, cancel, retry,
-   or one choice among known options?
-2. Can it be represented by 2-6 short labels?
-3. Is the needed input not a password, token, Cookie, 2FA, private key, long
-   path, URL, magnet, filename, regex, SQL, or code block?
-4. Is the channel healthy/unproven, or is this a safe smoke test?
+1. Is there a next action, confirmation, retry, branch, handoff, or likely follow-up?
+2. Can it be represented by 2-6 short options?
+3. Is the input not a password, token, Cookie, 2FA, private key, long path, URL, magnet, filename, regex, SQL, or code block?
+4. Would buttons reduce typing, ambiguity, or “please continue” loops?
 
-If all are yes, call `ask_user_choice` immediately and stop.
+If all are yes, call `ask_user_choice` and stop.
 
-If the channel is reported broken, accept minimal typed continuity only long
-enough to keep work moving, and route to debugging plus a safe smoke test.
+If the user's request is exact, low-risk, and needs no choice, execute directly and verify instead of buttonizing.
+
+If buttons are reported broken, accept minimal typed continuity only long enough to keep work moving, then diagnose and restore callback interaction.
+
+## Interaction Patterns
+
+### Continue / Next Step
+
+Use when a task is complete enough to offer bounded next work.
+
+Typical buttons:
+
+- `继续下一步` -> `continue:next`
+- `先自检` -> `inspect:selfcheck`
+- `暂时停止` -> `cancel`
+
+### Execute vs Inspect
+
+Use when the next step may change state but read-only inspection is also useful.
+
+- `直接执行` -> `execute:<action>`
+- `先只读检查` -> `inspect:readonly`
+- `取消` -> `cancel`
+
+### Risk Confirmation
+
+Use for destructive or high-impact operations.
+
+- `确认删除` / `确认重启` / `确认下载` -> `confirm:<action>`
+- `仅查看` -> `inspect:readonly`
+- `取消` -> `cancel`
+
+### Media / Resource Choice
+
+Use for media results, seasons, torrents, quality, sites, and subscription branches.
+
+- `下载第1个` -> `download:1`
+- `订阅第1季` -> `subscribe:s1`
+- `换一批` -> `continue:more`
+- `取消` -> `cancel`
+
+### Repair / Retry
+
+Use after failures or partial success.
+
+- `重试` -> `retry:<action>`
+- `换方案` -> `continue:alternative`
+- `只看原因` -> `inspect:reason`
+- `取消` -> `cancel`
 
 ## Must Buttonize
 
@@ -66,7 +119,8 @@ Use buttons for:
 - scheduler/workflow run choice;
 - Git commit/push/sync decisions;
 - repository sync reminders;
-- safe verification smoke tests.
+- safe verification smoke tests;
+- any bounded next step that would otherwise make the user type a ritual reply.
 
 ## Do Not Buttonize
 
@@ -78,33 +132,28 @@ Ask for typed input when the user must provide:
 
 Never echo or store secrets.
 
+## Smoke-Test Levels
+
+Use the narrowest honest health claim:
+
+1. **Sent** — `ask_user_choice` reports that options were sent.
+2. **Returned** — the Agent receives a selected value such as `smoke:ok` or `smoke:again` in the next turn.
+3. **Resolved** — fresh logs show callback receipt and interaction resolution.
+4. **Healthy** — sent, returned, and resolved are all true.
+
+If only level 2 is verified, say “主链路可用”, not “完美”.
+
 ## Broken Button Handling
 
 When the user reports buttons/TG interaction are broken:
 
-1. Treat the channel as **suspect** immediately.
+1. Treat the channel as suspect immediately.
 2. Do not send an operational confirmation only through buttons.
-3. Diagnose the real callback chain using `systematic-debugging`:
-   - `ask_user_choice` send result;
-   - notification log containing `buttons=[...]`;
-   - Telegram log for received callback;
-   - message-chain log for callback processing;
-   - `agent_interaction_manager.resolve` result;
-   - next Agent turn or upstream model failure.
-4. If the callback arrives but the Agent does not continue, say so plainly and
-   fix that layer; do not blame the user.
+3. Diagnose the callback chain with `systematic-debugging`.
+4. If callback arrives but the Agent does not continue, fix that layer instead of blaming the user.
 5. After repair, run a safe smoke test.
 
-## Typed Continuity Fallback
-
-While repairing, accept typed labels, values, or numbers that match the last
-buttons. Examples:
-
-- `2` or `修复TG交互` selects option 2.
-- `取消` cancels.
-- `确认执行` confirms the named action.
-
-This is not success. Keep restoring real callback-based interaction.
+Detailed callback checkpoints, typed fallback examples, value presets, and smoke-test criteria live in `REFERENCES.md`.
 
 ## Button Message Rules
 
@@ -120,46 +169,28 @@ Values:
 cancel
 confirm:<action>
 inspect:readonly
+inspect:selfcheck
+inspect:reason
 execute:<action>
+retry:<action>
 download:<n>
 subscribe:s<season>
 git:push
 git:commit
-continue:<step>
+continue:next
+continue:more
+continue:alternative
 smoke:ok
 smoke:again
 fallback:text
 ```
 
-## Presets
+## Output Contract
 
-- `继续执行` / `先看方案` / `取消`
-- `确认执行` / `先只读检查` / `取消`
-- `同意授权` / `仅查看` / `取消`
-- `同步并推送` / `只提交` / `暂不同步` / `取消`
-- `下载第1个` / `下载第2个` / `换一批` / `取消`
-- `订阅第1季` / `订阅多季` / `取消`
-- `确认重启` / `取消`
-- `确认删除` / `取消`
-- `查看插件` / `重载插件` / `取消`
-- `按钮正常` / `继续测试` / `文本模式`
+When a button choice is needed, call `ask_user_choice` and stop. When no choice is needed, continue normally.
 
-## Safe Smoke Test
+For long summaries where tool/runtime constraints make inline buttons impractical in the same user-visible reply, send the summary first, then immediately follow with a separate `ask_user_choice` reply carrying the bounded next-step buttons. Do not wait for the user to type “下一步” just to reveal routine options. This two-message handoff is preferred over a text-only next-step instruction.
 
-A smoke test must not change system state. Use it after repair or when the user
-asks to verify interaction.
+When the user has already chosen an exact next action such as `重载并验收 v1.5.5`, execute it directly instead of re-buttonizing the same decision.
 
-Suggested options:
-
-- `按钮正常` -> `smoke:ok`
-- `继续测试` -> `smoke:again`
-- `文本模式` -> `fallback:text`
-
-Healthy only if all are true:
-
-1. Button message is sent.
-2. Telegram callback is logged.
-3. Message chain processes `agent_interaction:choice`.
-4. Agent receives the selected value and continues the expected next turn.
-
-If any step fails, stay in repair mode and continue debugging.
+For task summaries, prefer ending with buttons when a bounded next step exists. For button health reports, include the verified level and evidence source. Do not claim levels that were not freshly checked.

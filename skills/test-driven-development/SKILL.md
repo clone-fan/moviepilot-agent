@@ -48,6 +48,19 @@ Use a lighter verification path instead of full TDD for:
 6. **Refactor only if needed**
    - Keep the green checks passing.
 
+## Property And Invariant Checks
+
+When unit tests are unavailable, define property-style checks for behavior that should always hold:
+
+- parser/frontmatter inputs should preserve required fields and reject malformed structures;
+- routing changes should keep the intended owner discoverable and avoid duplicate owners;
+- plugin/config operations should preserve existing keys unless intentionally removed;
+- media workflows should not confuse recognition, search, download, subscription, transfer, and library states;
+- cleanup or file operations should never expand beyond declared scope.
+
+Use generated or varied inputs only when safe and bounded. For MoviePilot operations, prefer read-only state queries and dry-runs over synthetic destructive tests.
+
+
 ## MoviePilot Agent Adaptation
 
 Acceptable checks include:

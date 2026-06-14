@@ -27,15 +27,15 @@ Before executing:
 
 ## Execution Loop
 
-For each plan item:
+For each plan item, preserve the Vibe-style governed execution checkpoints adapted to MoviePilot Agent:
 
-1. Re-read the item and its acceptance condition.
-2. Perform the smallest correct action with the narrowest tool path.
-3. Run fresh verification before moving on.
-4. If verification fails, diagnose once with a narrower check; do not claim completion.
-5. Continue to the next independent item only after the current item has evidence.
+1. **Requirement freeze** — restate the item as target, scope, risk, and acceptance evidence before mutation.
+2. **Phase execute** — perform the smallest correct action with the narrowest tool path.
+3. **No-regression check** — run fresh verification before moving on; for runtime-affecting changes, include a representative dry-run, router check, command discovery, safe execution, or authoritative state query.
+4. **Failure narrowing** — if verification fails, diagnose once with a narrower check; do not claim completion.
+5. **Phase cleanup** — update the local plan/status if needed, preserve only reusable context, and continue to the next independent item only after evidence exists.
 
-Do not wait for the user after every tiny step when the plan is clear and authorized.
+Do not wait for the user after every tiny step when the plan is clear and authorized. Do not bypass requirement freeze, phase_cleanup, or no-regression discipline for XL or multi-file work.
 
 ## MoviePilot Agent Adaptation
 
@@ -44,6 +44,30 @@ Do not wait for the user after every tiny step when the plan is clear and author
 - For `/config/agent` capability assets, prefer editing the relevant skill or memory file, then verify by re-reading or running structural checks.
 - For MoviePilot media operations, follow the domain router: sites → identity → resources → download/subscription/transfer → verification.
 - For repository synchronization, hand off to `moviepilot-agent-git-maintenance` after local verification.
+
+## Spec Execution Discipline
+
+When executing a spec-style plan:
+
+- preserve the frozen problem/scope/non-goals while editing;
+- do not silently expand from one owner file to a new subsystem;
+- if a phase reveals a new risk gate, stop that phase and ask with buttons;
+- if a candidate idea belongs to another owner, record it in runtime rather than mixing it into the current patch;
+- phase cleanup must update only the active runtime plan/admission note, not long-term memory.
+
+
+## File-Aware Planning
+
+For plans that involve several files or capability assets:
+
+1. Map each intended change to an owner file before editing.
+2. Keep a per-file acceptance condition: inserted rule, removed duplicate, updated status, or verified behavior.
+3. Execute in dependency order: routing/memory before dependent skill references only when needed.
+4. After each file, run a focused assertion instead of waiting for a broad final sweep.
+5. During phase_cleanup, update runtime plan state and admission notes, but do not write one-off process history into memory.
+
+If the file owner is uncertain, pause mutation and use `agent-capability-map` or `skill-architecture-governance` first.
+
 
 ## Verification Contract
 

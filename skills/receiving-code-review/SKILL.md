@@ -39,6 +39,18 @@ Ask before implementing when:
 
 Use buttons when the user needs to choose between a few concrete options.
 
+## Review Intake Matrix
+
+Classify incoming review comments before acting:
+
+- **Must fix**: security/data loss/crash/broken behavior/false completion claim.
+- **Should fix**: clear correctness, regression, maintainability, or user-facing issue with evidence.
+- **Consider**: useful but optional improvement; verify cost and scope first.
+- **Reject/defer**: unsupported, duplicate, YAGNI, conflicts with MoviePilot boundaries, or lacks evidence.
+
+For each accepted item, define the smallest verification before writing. For rejected/deferred items, record the technical reason rather than arguing from taste.
+
+
 ## Technical Evaluation Checklist
 
 Before applying a review suggestion, check:

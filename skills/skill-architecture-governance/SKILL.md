@@ -50,6 +50,33 @@ Merge or prune when:
 
 Prefer editing the existing skill over creating another near-duplicate.
 
+
+## External Skill Harvest Gate
+
+When learning from a large external skill corpus, treat each candidate as a capability slice, not as an installable runtime. Use this gate before adding or changing local skills:
+
+1. **Source** — name the upstream corpus or document and the retained value.
+2. **Owner** — identify the canonical local owner: existing skill, memory rule, runtime note, docs/archive reference, script, job, or no asset.
+3. **Dedup** — state what it overlaps with and why the existing owner is insufficient or sufficient.
+4. **Boundary** — write the no-go line: no wholesale import, no second orchestrator, no hidden runtime authority, no duplicated router.
+5. **Lifecycle** — classify as `reference_only`, `intake`, `shadow`, `soft_review`, `strict_review`, `productized`, or `retire`.
+6. **Evidence** — define the smallest proof needed before promotion.
+
+Default outcome for external 300+ skill packs is `reference_only` or `shadow`. Promotion to a local canonical skill requires dedup evidence, MoviePilot relevance, and a verification hook.
+
+## Admission Outcomes
+
+Use one of these decisions:
+
+- **Update existing skill** — best default when a local owner already exists.
+- **Create new skill** — only when the workflow is repeated, high-value, and has distinct triggers/tools/validation.
+- **Runtime note** — for current non-secret anchors, workstream state, or candidate inventory.
+- **Docs/archive** — for long-form external references or historical research.
+- **Memory rule** — only for high-frequency global boundaries that must load every session.
+- **Reject / no asset** — when value is generic, duplicate, one-off, unsafe, or outside MoviePilot Agent scope.
+
+No candidate may jump from upstream discovery directly to productized routing. It must pass at least reference/intake, dedup, boundary, and evidence checks.
+
 ## Skill Review Checklist
 
 For each skill change, verify:

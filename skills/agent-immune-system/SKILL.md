@@ -44,6 +44,20 @@ Do not:
 - write broad memory rules for one-off failures
 - bypass MoviePilot official tools with raw database writes unless necessary
 
+## Threat Model Triggers
+
+Escalate from ordinary execution to immune review when a task changes or introduces:
+
+- credential storage, token/cookie handling, auth/session behavior, or private headers;
+- shell commands, file deletion/cleanup, path traversal risk, broad globs, or archive extraction;
+- external URL fetching, webhooks, update channels, plugin repository sync, or network callbacks;
+- database writes, history deletion, scheduler/workflow execution, service restart, install/uninstall, or download start;
+- user-provided input flowing into commands, paths, SQL, HTML, URLs, or logs;
+- plugin or Agent changes where the ownership boundary is unclear: source vs runtime config vs persisted data vs generated files vs repository sync.
+
+The safe pattern is preview scope -> confirm if high-impact -> apply narrowly -> verify state -> preserve rollback evidence.
+
+
 ## Immune Check
 
 Before a risky-looking action, classify it:

@@ -78,6 +78,13 @@ Detailed formats and examples live in `REFERENCE.md` in this skill directory.
 - Functional duplicate: warn and avoid adding another rule unless the new one is safer.
 - Conflict: ask the user which behavior to keep if the conflict changes recognition globally.
 - Existing broad rule causing trouble: do not delete silently; propose a safer replacement and request confirmation.
+## Media Chain Handoff
+
+Identifier fixes are part of the media acquisition/organization chain:
+
+- if resource search or transfer fails because the title/path is misrecognized, fix recognition before repeating search or transfer;
+- if only one torrent/file sample is known, make the rule sample-specific and verify on that sample before broader acquisition;
+- after a recognition fix, hand back to the original chain: resource search, subscription search, or transfer retry.
 
 ## Output Contract
 

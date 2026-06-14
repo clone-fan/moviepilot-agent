@@ -1,5 +1,5 @@
 ---
-version: 2
+version: 3
 name: finishing-a-development-branch
 description: 当实现完成、所有测试通过、需要决定如何集成工作时使用——通过提供合并、PR 或清理等结构化选项来引导开发工作的收尾
 allowed-tools: execute_command ask_user_choice
@@ -7,200 +7,96 @@ allowed-tools: execute_command ask_user_choice
 
 # 完成开发分支
 
-## 概述
+## Trigger Boundary
 
-通过提供清晰的选项并执行所选工作流来引导开发工作的收尾。
+当实现完成、测试通过，并且用户需要决定如何处理当前开发分支时使用：本地合并、推送 PR、保持现状或丢弃。
 
-**核心原则：** 验证测试 → 展示选项 → 执行选择 → 清理。
+不要让本技能抢占 MoviePilot 媒体、站点、下载、订阅、转移、插件运维或普通 Git 同步路线。若只是同步 Agent 仓库，优先走 `moviepilot-agent-git-maintenance`。
 
-**开始时宣布：** "我正在使用 finishing-a-development-branch 技能来完成这项工作。"
+## Core Principle
 
-## 流程
+验证测试 → 展示按钮选项 → 执行选择 → 必要清理。
 
-### 步骤 1：验证测试
+不要在测试失败时继续集成；不要让用户手输例行选择；不要未确认就删除工作成果。
 
-**在展示选项之前，验证测试通过：**
+## Workflow
 
-```bash
-# 运行项目的测试套件
-npm test / cargo test / pytest / go test ./...
-```
+### 1. 验证测试
 
-**如果测试失败：**
-```
-测试失败（<N> 个失败）。必须先修复才能继续：
+在展示选项前运行项目测试或用户指定的验证命令。
 
-[显示失败信息]
+如果测试失败：报告失败数量和关键错误，停止，不继续合并或 PR。
 
-在测试通过之前无法进行合并/PR。
-```
+### 2. 确定基础分支
 
-停止。不要继续到步骤 2。
-
-**如果测试通过：** 继续步骤 2。
-
-### 步骤 2：确定基础分支
+优先自动识别 `main` / `master`：
 
 ```bash
-# 尝试常见的基础分支
 git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null
 ```
 
-如果基础分支无法自动确定，交给 `tg-button-interaction` 用按钮选择常见基础分支；不要要求用户手输例行确认。
+如果无法确定，交给 `tg-button-interaction` 用按钮选择常见基础分支，不要求用户手输例行确认。
 
-### 步骤 3：展示选项
+### 3. 展示按钮选项
 
-通过 `ask_user_choice` 展示以下 4 个按钮并停止本轮：
+通过 `ask_user_choice` 展示 4 个选项并停止本轮：
 
 - `本地合并` -> `git:merge-local`
 - `推送PR` -> `git:push-pr`
 - `保持现状` -> `git:keep`
 - `丢弃工作` -> `git:discard`
 
-保持选项简洁，不要求用户手输编号。
+### 4. 执行选择
 
-### 步骤 4：执行选择
+- **本地合并**：切换基础分支，拉取最新代码，合并功能分支，在合并结果上重新验证，通过后删除功能分支。
+- **推送 PR**：推送功能分支并创建 PR；保留分支和工作树，便于后续评审修改。
+- **保持现状**：只报告分支和工作树路径，不清理。
+- **丢弃工作**：必须再次用按钮确认，提示中列出将删除的分支、提交和工作树；确认后才强制删除。
 
-#### 选项 1：本地合并
+### 5. 清理工作树
 
-```bash
-# 切换到基础分支
-git checkout <base-branch>
+只在 `本地合并` 和 `丢弃工作` 后清理工作树。`推送 PR` 与 `保持现状` 默认保留。
 
-# 拉取最新代码
-git pull
+详细命令模板、PR body 示例和 worktree 清理命令见同目录 `REFERENCES.md`。
 
-# 合并功能分支
-git merge <feature-branch>
-
-# 在合并结果上验证测试
-<test command>
-
-# 如果测试通过
-git branch -d <feature-branch>
-```
-
-然后：清理工作树（步骤 5）
-
-#### 选项 2：推送并创建 PR
-
-```bash
-# 推送分支
-git push -u origin <feature-branch>
-
-# 创建 PR
-gh pr create --title "<title>" --body "$(cat <<'EOF'
-## 摘要
-<2-3 条变更要点>
-
-## 测试计划
-- [ ] <验证步骤>
-EOF
-)"
-```
-
-然后：清理工作树（步骤 5）
-
-#### 选项 3：保持现状
-
-报告："保留分支 <name>。工作树保留在 <path>。"
-
-**不要清理工作树。**
-
-#### 选项 4：丢弃
-
-**先用按钮确认高风险删除：**
-
-通过 `ask_user_choice` 展示：
-
-- `确认丢弃` -> `confirm:discard-branch`
-- `取消` -> `cancel`
-
-提示中必须列出将永久删除的分支、提交和工作树。按钮回调确认后才执行；不要要求用户手输 `discard`，除非按钮链路正在修复。
-
-确认后：
-```bash
-git checkout <base-branch>
-git branch -D <feature-branch>
-```
-
-然后：清理工作树（步骤 5）
-
-### 步骤 5：清理工作树
-
-**对于选项 1、2、4：**
-
-检查是否在工作树中：
-```bash
-git worktree list | grep $(git branch --show-current)
-```
-
-如果是：
-```bash
-git worktree remove <worktree-path>
-```
-
-**对于选项 3：** 保留工作树。
-
-## 快速参考
+## Quick Matrix
 
 | 选项 | 合并 | 推送 | 保留工作树 | 清理分支 |
-|------|------|------|-----------|---------|
-| 1. 本地合并 | ✓ | - | - | ✓ |
-| 2. 创建 PR | - | ✓ | ✓ | - |
-| 3. 保持现状 | - | - | ✓ | - |
-| 4. 丢弃 | - | - | - | ✓（强制） |
+|---|---|---|---|---|
+| 本地合并 | 是 | 否 | 否 | 是 |
+| 推送 PR | 否 | 是 | 是 | 否 |
+| 保持现状 | 否 | 否 | 是 | 否 |
+| 丢弃工作 | 否 | 否 | 否 | 是，需二次确认 |
 
-## 常见错误
+## Red Lines
 
-**跳过测试验证**
-- **问题：** 合并损坏的代码、创建失败的 PR
-- **修复：** 在提供选项前始终验证测试
+绝不：
 
-**开放式问题**
-- **问题：** "接下来该做什么？" → 含糊不清
-- **修复：** 准确展示 4 个结构化选项
+- 测试失败时继续集成。
+- 合并前不验证测试结果。
+- 不确认就删除工作成果。
+- 未经明确请求就强制推送。
 
-**自动清理工作树**
-- **问题：** 在可能还需要工作树时就删除了（选项 2、3）
-- **修复：** 只在选项 1 和 4 时清理
+始终：
 
-**丢弃时不确认**
-- **问题：** 意外删除工作成果
-- **修复：** 使用明确按钮确认，按钮不可用时才临时要求精确文本确认
+- 在提供选项前验证测试。
+- 用按钮展示结构化选项。
+- 丢弃工作必须二次确认。
+- 只在本地合并和丢弃后清理工作树。
 
-## 红线
+## Integration
 
-**绝不：**
-- 在测试失败时继续
-- 合并前不验证测试结果
-- 不确认就删除工作成果
-- 未经明确请求就强制推送
-
-**始终：**
-- 在提供选项前验证测试
-- 准确展示 4 个选项
-- 选项 4 使用明确按钮确认；按钮不可用时才临时使用精确文本确认
-- 只在选项 1 和 4 时清理工作树
-
-## 集成
-
-**被以下技能调用：**
-- **subagent-driven-development**（步骤 7）- 所有任务完成后
-- **executing-plans**（步骤 5）- 所有批次完成后
-
-**配合使用：**
-- **using-git-worktrees** - 清理由该技能创建的工作树
+- `subagent-driven-development`：所有任务完成后可调用。
+- `executing-plans`：所有批次完成后可调用。
+- `using-git-worktrees`：清理由该技能创建的工作树。
 
 ## MoviePilot Agent Adaptation
 
-- This skill is workflow support, not the primary MoviePilot business route.
-- Do not override direct routes, resource search, media operations, safety confirmation, or completion verification.
-- Use it only when the user request truly matches the skill trigger; otherwise hand back to the MoviePilot domain skill.
+本技能只是开发收尾支持，不是 MoviePilot 业务主路由。不得覆盖 direct routes、resource search、media operations、安全确认或完成验证。
 
 ## Completion Checklist
 
-- Confirm the selected workflow actually fits the user request.
-- Keep outputs actionable and bounded; avoid turning simple MoviePilot tasks into heavy planning.
-- Before any completion claim, run or cite fresh verification appropriate to the change.
-- If durable `/config/agent` capability assets changed, trigger the repository sync reminder path.
+- 所选工作流确实匹配用户请求。
+- 输出保持有界，不把简单 MoviePilot 任务变成重型开发流程。
+- 完成声明前有新鲜验证证据。
+- 若 `/config/agent` 能力资产变化，提醒走仓库同步路径。

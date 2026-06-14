@@ -51,21 +51,27 @@ Do not use when:
 6. **Close**
    - Report only synthesized results, evidence, and remaining blockers.
 
-## Subagent Prompt Requirements
+## Handoff Envelope
 
 Each subagent task should include:
 
-- scope and file/path/media/system area;
-- whether it is read-only;
-- what evidence to return;
-- what decisions it should not make;
-- any safety boundary such as no credentials, no writes, no restarts.
+- **upstream role**: main Agent as orchestrator and execution owner;
+- **specialist role**: reviewer, diagnostician, researcher, architect, tester, or other bounded perspective;
+- **scope**: exact file/path/media/system area;
+- **input contract**: known constraints, relevant context, and what to ignore;
+- **expected outputs**: findings, risks, evidence refs, and optional recommendation;
+- **done definition**: what evidence is sufficient for this read-only step;
+- **decision limits**: what decisions it must not make;
+- **safety boundary**: no credentials, no writes, no downloads, no deletion, no restarts, no user-facing messages.
+
+For review checkpoints, ask subagents to grade issues by impact and evidence, not by authority. Main Agent resolves conflicts with fresh tools or file reads.
 
 ## Safety Rules
 
 - Subagents must not ask the user questions.
 - Subagents must not send user-facing messages.
 - Subagents must not perform writes, downloads, deletion, plugin install/uninstall, restarts, or credential changes.
+- Role packs and team templates are optional advisory structure only; they cannot change route, stage, release policy, merge policy, or ownership.
 - Main Agent must still ask confirmation for high-impact actions.
 - Do not paste subagent output verbatim; summarize only what matters.
 
