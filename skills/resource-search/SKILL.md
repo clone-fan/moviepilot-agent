@@ -1,6 +1,6 @@
 ---
 name: resource-search
-version: 17
+version: 18
 description: >-
   MUST-USE when the user asks to search MoviePilot tracker/torrent resources
   for a movie, TV show, anime, or ambiguous title. Do not route through generic
@@ -19,6 +19,8 @@ allowed-tools: search_media recognize_media query_library_exists query_subscribe
 When the user asks to find/search resources for a title, use this skill. Do not
 route through general CLI or API. Do not search, download, or subscribe before
 the user sees the card and chooses.
+
+**🚫 卡片强制门禁：任何搜片请求，第一步 resolve media identity 后必须立即走 Step 3 发卡片+按钮。禁止在卡片之前输出任何文字结论，包括"媒体库已有""无资源""已订阅"等。卡片是用户看到的第一条回复，不是可选项。**
 
 ## Core Flow
 
@@ -44,6 +46,18 @@ Use `subagent_task` with `action=run` and two tasks:
 back to direct tool calls one at a time. Do not block the user.
 
 ### Step 3 — Send Media Info Card (TG 卡片优先)
+
+**🚫 硬规则：禁止跳过卡片直接文字回复！**
+
+无论媒体库状态如何（已入库/未入库/订阅中/无订阅），必须先发卡片+按钮。
+任何情况下不得在卡片之前输出纯文字结论。即使媒体库已有、无资源、识别失败，
+也要先发卡片（或兜底卡片）再跟按钮。
+
+**常见违规场景（必须杜绝）：**
+- ❌ 媒体库已有 → 直接文字说"已经有了不用下" → 跳过卡片
+- ❌ 无资源 → 直接文字说"没找到" → 跳过卡片
+- ❌ 已订阅 → 直接文字说"已订阅了" → 跳过卡片
+- ✅ 正确做法：无论什么状态，先发卡片，再跟按钮让用户选择
 
 Use `send_message` with `image_url` to show poster on top, text below — same
 style as MP 入库通知/暂停播放通知.
