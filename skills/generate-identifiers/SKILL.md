@@ -1,6 +1,6 @@
 ---
 name: generate-identifiers
-version: 5
+version: 6
 description: >-
   Use this skill when a user provides a torrent name or file name and wants to fix recognition issues, or asks to add/manage custom identifiers (自定义识别词). Generate conservative, sample-specific MoviePilot identifier rules, check existing rules first, merge without deleting existing identifiers, and verify recognition when possible.
 allowed-tools: query_custom_identifiers update_custom_identifiers recognize_media
@@ -37,6 +37,9 @@ Required guardrails:
 - Add a short `#` comment before new rules for maintainability.
 
 Detailed formats and examples live in `REFERENCE.md` in this skill directory.
+For anime/TV season relabeling such as `S02E01 -> TMDB S01E14`, use
+`media-identifier-rulecraft`: first confirm TMDB season/episode mapping, then
+write a narrow combined replacement + offset rule with release-group anchors.
 
 ## Workflow
 

@@ -1,6 +1,6 @@
 ---
 name: media-identifier-rulecraft
-version: 2
+version: 3
 description: >-
   Use this skill for advanced MoviePilot/NASTool custom identifier rulecraft when simple generate-identifiers rules are not enough: anime or TV releases with non-standard seasons, absolute episode numbering, TMDB episode groups, noisy bilingual torrent names, conflicting years/resolutions/bit-depth numbers, direct metadata binding, or anti-collision regex design.
 allowed-tools: query_custom_identifiers update_custom_identifiers recognize_media search_media query_media_detail query_episode_schedule
@@ -19,6 +19,7 @@ For simple alias cleanup, noisy token removal, ordinary offset, or direct known-
 Use this skill when the sample involves:
 
 - anime seasons that do not match TMDB seasons;
+- publisher/release-group season labels that differ from TMDB seasons;
 - absolute episode numbering or second-cour offsets;
 - specials inserted into main episode order;
 - TMDB episode group decisions;
@@ -38,13 +39,47 @@ Custom identifiers are global preprocessing rules. Advanced rules must be narrow
 4. Compute mapping explicitly, for example `S03E01 -> TMDB S01E48`, so offset is `EP+47`.
 5. Only then design the identifier rule.
 
+## Rule Formats
+
+MoviePilot custom identifiers support four practical formats. Operators must have spaces around them.
+
+1. **Block word** — remove matched text:
+
+   ```text
+   NoisyToken
+   ```
+
+2. **Replacement** — regex replacement:
+
+   ```text
+   Wrong\.Title => Correct.Title
+   ```
+
+3. **Episode offset** — modify episode number between delimiters:
+
+   ```text
+   S01E <> 1080p >> EP+13
+   ```
+
+4. **Combined rule** — replacement first, then offset:
+
+   ```text
+   Wrong\.S02E(?=.*Group) => Correct.S01E && S01E <> 1080p >> EP+13
+   ```
+
+Comment convention for maintainability:
+
+```text
+#作品名 Sxx【发布组】
+```
+
 ## Regex Rulecraft
 
 Use sample-specific anchors:
 
 - title alias or original title;
 - year/remake discriminator;
-- group/source tag;
+- release group/source tag;
 - season/episode marker;
 - resolution/codec/file extension as boundary, not as broad target.
 
@@ -61,6 +96,45 @@ Avoid broad rules like:
 ```text
 S03E => S01E >> EP+47
 ```
+
+## Worked Example: Jigokuraku / Hell's Paradise S02 Label
+
+Scenario: torrent name says release-group `S02E01`, but TMDB has season 1 continuing to episode 25, so the real target is `S01E14`.
+
+Sample:
+
+```text
+Jigokuraku.S02E01.2026.1080p.CR.WEB-DL.x264.AAC-ADWeb
+```
+
+Verification steps:
+
+```text
+search_media(title="Jigokuraku", media_type="tv")
+query_media_detail(tmdb_id=117465, media_type="tv")
+```
+
+Mapping:
+
+```text
+S02E01 -> S01E14, so offset is EP+13
+S02E02 -> S01E15
+```
+
+Narrow rule:
+
+```text
+#地狱乐 S02【ADWeb】
+Jigokuraku.S02E(?=.*ADWeb) => Jigokuraku.S01E && S01E <> 1080p >> EP+13
+```
+
+Then save through `update_custom_identifiers` after querying existing identifiers, and verify:
+
+```text
+recognize_media(title="Jigokuraku.S02E01.2026.1080p.CR.WEB-DL.x264.AAC-ADWeb")
+```
+
+Expected effect: `S02E01 -> S01E14`; adjacent episodes continue by the same offset.
 
 ## Anti-Collision Checklist
 
@@ -84,6 +158,7 @@ If multiple numeric distractors remain, strengthen anchors or use metadata bindi
 - Save the full merged list only through `update_custom_identifiers`.
 - Verify with `recognize_media` on the original sample.
 - For risky offsets, test at least one adjacent episode or likely collision pattern when available.
+
 ## Acquisition Chain Guard
 
 For anime/TV releases, do not let resource pressure force unsafe global identifiers:
