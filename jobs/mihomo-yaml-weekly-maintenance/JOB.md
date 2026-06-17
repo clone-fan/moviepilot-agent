@@ -3,7 +3,7 @@ name: Mihomo_Yaml 每日脱敏维护
 description: 每日从 10.0.0.2 只读读取 /etc/mihomo/config.yaml，脱敏生成 Mihomo_Yaml 仓库的 mihomo_smart_config.yaml，校验 YAML 并扫描敏感信息；有变更时提交推送。
 schedule: recurring
 status: pending
-last_run: "2026-06-16 06:00"
+last_run: "2026-06-17 06:00"
 ---
 # 任务详情
 
@@ -32,7 +32,7 @@ last_run: "2026-06-16 06:00"
 - `OK committed_and_pushed ...`
 ## 执行日志
 
-- **2026-06-16 06:00** - 心跳执行每日脱敏维护；结果：OK no_changes；无仓库变更，任务保持 pending。
+- **2026-06-17 06:00** - 心跳执行每日脱敏维护；结果：OK no_changes；无仓库变更，任务保持 pending。
 - **2026-06-09 21:07** - 执行每日脱敏维护；结果：OK committed_and_pushed 0e81660；已提交并推送变更，任务保持 pending。
 - **2026-06-07 15:23** - 执行每日脱敏维护；结果：OK no_changes；无仓库变更，任务保持 pending。
 - **2026-06-03 01:28** - 手动继续执行每日脱敏维护；结果：`OK no_changes`，无仓库变更，任务保持 `pending`。
