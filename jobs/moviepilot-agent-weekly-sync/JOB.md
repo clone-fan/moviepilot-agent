@@ -3,7 +3,7 @@ name: moviepilot-agent 每周维护同步
 description: 每周同步 /config/agent 中允许备份的 Agent 能力资产到 GitHub 仓库 clone-fan/moviepilot-agent；执行敏感扫描；有变更则自动提交并推送。
 schedule: recurring
 status: pending
-last_run: "2026-06-17 06:00"
+last_run: "2026-06-25 心跳"
 ---
 # 任务详情
 
@@ -44,6 +44,7 @@ last_run: "2026-06-17 06:00"
 
 ## 执行日志
 
+- **2026-06-25 心跳** - 心跳执行每周维护同步；结果：OK committed_and_pushed d708b35 chore: weekly sync agent capability assets；任务保持 pending。
 - **2026-06-17 06:00** - 心跳执行每周维护同步；结果：OK committed_and_pushed 2ffa026 chore: weekly sync agent capability assets；任务保持 pending。
 - **2026-06-17 01:31** - 用户手动触发同步；结果：OK committed_and_pushed f81c7a0 chore: weekly sync agent capability assets；任务保持 pending。
 - **2026-06-16 06:00** - 心跳执行每周维护同步；结果：OK committed_and_pushed 9b9ae90 chore: weekly sync agent capability assets；任务保持 pending。

@@ -28,7 +28,7 @@ def main() -> int:
     RAW.chmod(0o600)
 
     run(['python3','scripts/sanitize_config.py',str(RAW),str(OUT)], cwd=REPO)
-    run(['python3','scripts/validate_yaml.py',str(OUT)], cwd=REPO)
+    run(['/opt/venv/bin/python','scripts/validate_yaml.py',str(OUT)], cwd=REPO)
 
     scan_text = ''
     for p in REPO.rglob('*'):
